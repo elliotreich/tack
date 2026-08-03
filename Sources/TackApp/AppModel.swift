@@ -24,6 +24,7 @@ final class AppModel: ObservableObject {
     @Published var statusMessage = "Ready"
     @Published var isCapturing = false
     @Published var noteFilter: NoteFilter = .all
+    @Published var viewportSize = CGSize(width: 900, height: 650)
     private var autosaveTask: Task<Void, Never>?
 
     init() {
@@ -158,7 +159,30 @@ final class AppModel: ObservableObject {
     }
 
     func addNote() {
-        let note = TackNote(frame: TackRect(x: 120, y: 120, width: 180, height: 180), color: .yellow)
+        let noteWidth = 180.0
+        let noteHeight = 180.0
+        let worldCenterX = (viewportSize.width * 0.5 - pan.width) / max(zoom, 0.01)
+        let worldCenterY = (viewportSize.height * 0.5 - pan.height) / max(zoom, 0.01)
+        let baseX = worldCenterX - noteWidth / 2
+        let baseY = worldCenterY - noteHeight / 2
+        let offset = 28.0
+        var noteX = baseX
+        var noteY = baseY
+        var attempt = 0
+        while board.notes.contains(where: { overlaps($0.frame, TackRect(x: noteX, y: noteY, width: noteWidth, height: noteHeight)) }) && attempt < 100 {
+            noteX = baseX + offset * Double(attempt % 8)
+            noteY = baseY + offset * Double(attempt / 8)
+            attempt += 1
+        }
+        let note = TackNote(
+            frame: TackRect(
+                x: noteX,
+                y: noteY,
+                width: noteWidth,
+                height: noteHeight
+            ),
+            color: .yellow
+        )
         board.notes.append(note)
         board.touch()
         selectedNoteID = note.id
@@ -267,11 +291,46 @@ final class AppModel: ObservableObject {
         updateNote(id) { $0.frame = frame }
     }
 
+    func updateViewport(_ size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        viewportSize = size
+    }
+
     func fitCanvas(in size: CGSize) {
-        guard board.canvas.width > 0, board.canvas.height > 0, size.width > 0, size.height > 0 else { return }
+        guard size.width > 0, size.height > 0 else { return }
+        viewportSize = size
         let usable = CGSize(width: max(100, size.width - 48), height: max(100, size.height - 48))
-        zoom = min(usable.width / board.canvas.width, usable.height / board.canvas.height)
-        pan = CGSize(width: (size.width - board.canvas.width * zoom) / 2, height: (size.height - board.canvas.height * zoom) / 2)
+        guard let bounds = noteBounds else {
+            zoom = 1
+            pan = CGSize(width: size.width / 2, height: size.height / 2)
+            return
+        }
+
+        let padding = 120.0
+        let worldWidth = max(320, bounds.width + padding * 2)
+        let worldHeight = max(240, bounds.height + padding * 2)
+        zoom = min(1.25, max(0.08, min(usable.width / worldWidth, usable.height / worldHeight)))
+        let leftWorld = bounds.x - padding
+        let topWorld = bounds.y - padding
+        pan = CGSize(
+            width: (size.width - worldWidth * zoom) / 2 - leftWorld * zoom,
+            height: (size.height - worldHeight * zoom) / 2 - topWorld * zoom
+        )
+    }
+
+    func visibleNotes(in size: CGSize) -> [TackNote] {
+        guard zoom > 0 else { return filteredNotes }
+        let margin = 240 / zoom
+        let minX = -pan.width / zoom - margin
+        let minY = -pan.height / zoom - margin
+        let maxX = (size.width - pan.width) / zoom + margin
+        let maxY = (size.height - pan.height) / zoom + margin
+        return filteredNotes.filter {
+            $0.frame.x < maxX &&
+                $0.frame.x + $0.frame.width > minX &&
+                $0.frame.y < maxY &&
+                $0.frame.y + $0.frame.height > minY
+        }
     }
 
     func imageURL(for note: TackNote) -> URL? {
@@ -298,6 +357,24 @@ final class AppModel: ObservableObject {
         statusMessage = "Error: \(error.localizedDescription)"
         let alert = NSAlert(error: error)
         alert.runModal()
+    }
+
+    private var noteBounds: TackRect? {
+        guard let first = board.notes.first else { return nil }
+        return board.notes.dropFirst().reduce(first.frame) { result, note in
+            let minX = min(result.x, note.frame.x)
+            let minY = min(result.y, note.frame.y)
+            let maxX = max(result.x + result.width, note.frame.x + note.frame.width)
+            let maxY = max(result.y + result.height, note.frame.y + note.frame.height)
+            return TackRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+        }
+    }
+
+    private func overlaps(_ lhs: TackRect, _ rhs: TackRect) -> Bool {
+        lhs.x < rhs.x + rhs.width &&
+            lhs.x + lhs.width > rhs.x &&
+            lhs.y < rhs.y + rhs.height &&
+            lhs.y + lhs.height > rhs.y
     }
 
     private func scheduleAutosave() {

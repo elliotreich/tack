@@ -18,6 +18,12 @@ struct ContentView: View {
                     .font(.caption)
                 Spacer()
                 Button {
+                    model.addNote()
+                } label: {
+                    Label("New note", systemImage: "plus.square")
+                }
+                .buttonStyle(.borderless)
+                Button {
                     model.captureImage()
                 } label: {
                     Label(model.isCapturing ? "Capturing…" : "Capture", systemImage: model.isCapturing ? "hourglass" : "camera.viewfinder")
@@ -127,32 +133,29 @@ struct BoardCanvas: View {
         GeometryReader { proxy in
             ZStack(alignment: .topLeading) {
                 Canvas { context, size in
-                    let canvasRect = CGRect(
-                        x: model.pan.width,
-                        y: model.pan.height,
-                        width: model.board.canvas.width * model.zoom,
-                        height: model.board.canvas.height * model.zoom
-                    )
-                    context.fill(Path(canvasRect), with: .color(model.board.canvas.background.swiftUIColor))
+                    let viewportRect = CGRect(origin: .zero, size: size)
+                    context.fill(Path(viewportRect), with: .color(model.board.canvas.background.swiftUIColor))
                     guard model.board.canvas.showsGrid else { return }
                     var grid = Path()
                     let spacing = max(12, 40 * model.zoom)
-                    var x = canvasRect.minX
-                    while x <= canvasRect.maxX {
-                        grid.move(to: CGPoint(x: x, y: canvasRect.minY))
-                        grid.addLine(to: CGPoint(x: x, y: canvasRect.maxY))
+                    let startX = model.pan.width.truncatingRemainder(dividingBy: spacing)
+                    let startY = model.pan.height.truncatingRemainder(dividingBy: spacing)
+                    var x = startX >= 0 ? startX : startX + spacing
+                    while x <= size.width {
+                        grid.move(to: CGPoint(x: x, y: 0))
+                        grid.addLine(to: CGPoint(x: x, y: size.height))
                         x += spacing
                     }
-                    var y = canvasRect.minY
-                    while y <= canvasRect.maxY {
-                        grid.move(to: CGPoint(x: canvasRect.minX, y: y))
-                        grid.addLine(to: CGPoint(x: canvasRect.maxX, y: y))
+                    var y = startY >= 0 ? startY : startY + spacing
+                    while y <= size.height {
+                        grid.move(to: CGPoint(x: 0, y: y))
+                        grid.addLine(to: CGPoint(x: size.width, y: y))
                         y += spacing
                     }
                     context.stroke(grid, with: .color(.black.opacity(0.07)), lineWidth: 0.6)
                 }
 
-                ForEach(model.filteredNotes) { note in
+                ForEach(model.visibleNotes(in: proxy.size)) { note in
                     PositionedNote(model: model, note: note)
                 }
             }
@@ -168,14 +171,19 @@ struct BoardCanvas: View {
                     }
                     .onEnded { _ in panOrigin = nil }
             )
-            .onAppear { model.fitCanvas(in: proxy.size) }
+            .onAppear {
+                model.updateViewport(proxy.size)
+                model.fitCanvas(in: proxy.size)
+            }
+            .onChange(of: proxy.size) { _, newSize in
+                model.updateViewport(newSize)
+            }
             .onChange(of: model.board.id) { _, _ in model.fitCanvas(in: proxy.size) }
-            .onChange(of: model.board.canvas.width) { _, _ in model.fitCanvas(in: proxy.size) }
         }
         .background(Color(nsColor: .underPageBackgroundColor))
         .overlay(alignment: .bottomTrailing) {
             HStack(spacing: 8) {
-                Button("Fit") { model.fitCanvas(in: CGSize(width: 900, height: 650)) }
+                Button("Fit") { model.fitCanvas(in: model.viewportSize) }
                 Slider(value: $model.zoom, in: 0.05...2)
                     .frame(width: 120)
                 Text("\(Int(model.zoom * 100))%")

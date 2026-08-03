@@ -12,7 +12,9 @@ Board.tack/
 └── ops/
 ```
 
-`board.json` is authoritative for the materialized board. JSON is pretty-printed with stable sorted keys and ISO-8601 dates. Unknown future keys are not currently re-emitted by the Swift decoder; this is an explicit v0.1 limitation to remove before publishing the format as a compatibility contract.
+`board.json` is authoritative for the materialized board. JSON is pretty-printed with stable sorted keys and ISO-8601 dates. Note coordinates are unbounded world coordinates; the app does not treat `canvas.width` and `canvas.height` as a hard edge. They remain layout/export hints for v0.1 and preserve compatibility with captured boards.
+
+Unknown future keys are not currently re-emitted by the Swift decoder; this is an explicit v0.1 limitation to remove before publishing the format as a compatibility contract.
 
 The legacy `.postit` importer preserves:
 
