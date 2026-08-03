@@ -9,8 +9,16 @@ final class TackFormatTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("tack-format-\(UUID().uuidString).tack")
         defer { try? FileManager.default.removeItem(at: root) }
 
-        let note = TackNote(frame: TackRect(x: 10, y: 20, width: 180, height: 180), text: "Hello Tack")
-        let board = Board(title: "Round trip", notes: [note])
+        let note = TackNote(
+            frame: TackRect(x: 10, y: 20, width: 180, height: 180),
+            color: .lavender,
+            text: "Hello Tack",
+            fontName: "Georgia",
+            fontSize: 28,
+            isBold: true,
+            isItalic: true
+        )
+        let board = Board(title: "Round trip", notes: [note], pinnedNoteID: note.id)
         try TackPackage.save(board, to: root)
 
         let loaded = try TackPackage.load(from: root)
@@ -20,6 +28,12 @@ final class TackFormatTests: XCTestCase {
         XCTAssertEqual(loaded.board.notes.map(\.id), board.notes.map(\.id))
         XCTAssertEqual(loaded.board.notes.map(\.text), board.notes.map(\.text))
         XCTAssertEqual(loaded.board.notes.map(\.frame), board.notes.map(\.frame))
+        XCTAssertEqual(loaded.board.notes.map(\.color), board.notes.map(\.color))
+        XCTAssertEqual(loaded.board.notes.map(\.fontName), board.notes.map(\.fontName))
+        XCTAssertEqual(loaded.board.notes.map(\.fontSize), board.notes.map(\.fontSize))
+        XCTAssertEqual(loaded.board.notes.map(\.isBold), board.notes.map(\.isBold))
+        XCTAssertEqual(loaded.board.notes.map(\.isItalic), board.notes.map(\.isItalic))
+        XCTAssertEqual(loaded.board.pinnedNoteID, board.pinnedNoteID)
         XCTAssertEqual(loaded.rootURL, root)
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("manifest.json").path))
     }

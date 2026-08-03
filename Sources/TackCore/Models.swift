@@ -39,6 +39,8 @@ public struct TackColor: Codable, Equatable, Sendable {
     public static let green = TackColor(red: 0.62, green: 0.92, blue: 0.68)
     public static let pink = TackColor(red: 1, green: 0.63, blue: 0.72)
     public static let white = TackColor(red: 0.98, green: 0.98, blue: 0.96)
+    public static let lavender = TackColor(red: 0.78, green: 0.70, blue: 0.98)
+    public static let orange = TackColor(red: 1, green: 0.72, blue: 0.38)
 }
 
 public struct TackCapture: Codable, Equatable, Sendable, Identifiable {
@@ -75,6 +77,10 @@ public struct TackNote: Codable, Equatable, Sendable, Identifiable {
     public var rotation: Double
     public var color: TackColor
     public var text: String
+    public var fontName: String?
+    public var fontSize: Double?
+    public var isBold: Bool?
+    public var isItalic: Bool?
     public var groupName: String?
     public var imagePath: String?
     public var sourceCaptureID: String?
@@ -89,6 +95,10 @@ public struct TackNote: Codable, Equatable, Sendable, Identifiable {
         rotation: Double = 0,
         color: TackColor = .yellow,
         text: String = "",
+        fontName: String? = nil,
+        fontSize: Double? = nil,
+        isBold: Bool? = nil,
+        isItalic: Bool? = nil,
         groupName: String? = nil,
         imagePath: String? = nil,
         sourceCaptureID: String? = nil,
@@ -102,6 +112,10 @@ public struct TackNote: Codable, Equatable, Sendable, Identifiable {
         self.rotation = rotation
         self.color = color
         self.text = text
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.isBold = isBold
+        self.isItalic = isItalic
         self.groupName = groupName
         self.imagePath = imagePath
         self.sourceCaptureID = sourceCaptureID
@@ -135,6 +149,7 @@ public struct Board: Codable, Equatable, Sendable, Identifiable {
     public var notes: [TackNote]
     public var groups: [TackGroup]
     public var captures: [TackCapture]
+    public var pinnedNoteID: UUID?
     public var schemaVersion: String
 
     public init(
@@ -146,6 +161,7 @@ public struct Board: Codable, Equatable, Sendable, Identifiable {
         notes: [TackNote] = [],
         groups: [TackGroup] = [],
         captures: [TackCapture] = [],
+        pinnedNoteID: UUID? = nil,
         schemaVersion: String = "0.1"
     ) {
         self.id = id
@@ -156,6 +172,7 @@ public struct Board: Codable, Equatable, Sendable, Identifiable {
         self.notes = notes
         self.groups = groups
         self.captures = captures
+        self.pinnedNoteID = pinnedNoteID
         self.schemaVersion = schemaVersion
     }
 

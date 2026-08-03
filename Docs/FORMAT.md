@@ -16,6 +16,8 @@ Board.tack/
 
 Unknown future keys are not currently re-emitted by the Swift decoder; this is an explicit v0.1 limitation to remove before publishing the format as a compatibility contract.
 
+Digital note typography is stored on the note as optional `fontName`, `fontSize`, `isBold`, and `isItalic` fields so older packages continue to load with the default style. `Board.pinnedNoteID` identifies the note currently published to Tack's local desktop-widget snapshot; it is a convenience pointer, not a second copy of the note.
+
 The legacy `.postit` importer preserves:
 
 - board title;

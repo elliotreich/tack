@@ -2,6 +2,26 @@ import AppKit
 import SwiftUI
 import TackCore
 
+private struct NoteColorChoice: Identifiable {
+    let name: String
+    let color: TackColor
+
+    var id: String { name }
+}
+
+private let noteColorChoices = [
+    NoteColorChoice(name: "Yellow", color: .yellow),
+    NoteColorChoice(name: "Blue", color: .blue),
+    NoteColorChoice(name: "Green", color: .green),
+    NoteColorChoice(name: "Pink", color: .pink),
+    NoteColorChoice(name: "Lavender", color: .lavender),
+    NoteColorChoice(name: "Orange", color: .orange),
+    NoteColorChoice(name: "White", color: .white)
+]
+
+private let noteFontChoices = ["System", "Helvetica Neue", "Avenir Next", "Georgia", "Menlo"]
+private let noteSizeChoices: [Double] = [12, 14, 16, 18, 22, 28, 36]
+
 struct ContentView: View {
     @ObservedObject var model: AppModel
     @State private var showInspector = true
@@ -203,14 +223,34 @@ private struct PositionedNote: View {
     @State private var dragOrigin: TackRect?
 
     var body: some View {
-        NoteCard(note: note, imageURL: model.imageURL(for: note), isSelected: model.selectedNoteID == note.id)
+        NoteCard(
+            note: note,
+            imageURL: model.imageURL(for: note),
+            isSelected: model.selectedNoteID == note.id,
+            isEditing: model.editingNoteID == note.id,
+            text: Binding(
+                get: { model.board.notes.first(where: { $0.id == note.id })?.text ?? note.text },
+                set: { value in model.updateNote(note.id) { $0.text = value } }
+            )
+        )
             .frame(width: note.frame.width * model.zoom, height: note.frame.height * model.zoom)
             .position(
                 x: model.pan.width + note.frame.midX * model.zoom,
                 y: model.pan.height + note.frame.midY * model.zoom
             )
             .rotationEffect(.radians(note.rotation))
+            .onTapGesture(count: 2) { model.beginEditing(note.id) }
             .onTapGesture { model.selectedNoteID = note.id }
+            .contextMenu {
+                Button(model.isPinned(note.id) ? "Unpin from desktop" : "Pin to desktop widget") {
+                    model.selectedNoteID = note.id
+                    model.togglePinnedNote()
+                }
+                Button("Edit note") { model.beginEditing(note.id) }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(note.text.isEmpty ? "Empty note" : "Note: \(note.text)")
+            .accessibilityHint("Click to select. Double-click to edit.")
             .gesture(
                 DragGesture(minimumDistance: 2)
                     .onChanged { value in
@@ -248,6 +288,11 @@ private struct NoteInspector: View {
                 .frame(minHeight: 150)
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
 
+                Text("STYLE")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                NoteStyleControls(model: model, note: note)
+
                 HStack {
                     Text("Position")
                     Spacer()
@@ -262,6 +307,15 @@ private struct NoteInspector: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
+                Button {
+                    model.togglePinnedNote()
+                } label: {
+                    Label(
+                        model.isPinned(note.id) ? "Unpin from desktop" : "Pin to desktop widget",
+                        systemImage: model.isPinned(note.id) ? "pin.slash" : "pin"
+                    )
+                }
+                .buttonStyle(.borderless)
                 Button(role: .destructive) {
                     model.deleteSelected()
                 } label: {
@@ -279,10 +333,88 @@ private struct NoteInspector: View {
     }
 }
 
+private struct NoteStyleControls: View {
+    @ObservedObject var model: AppModel
+    let note: TackNote
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(noteFontChoices, id: \.self) { fontName in
+                        Button(fontName) {
+                            model.updateNote(note.id) { $0.fontName = fontName == "System" ? nil : fontName }
+                        }
+                    }
+                } label: {
+                    Label(note.fontName ?? "System", systemImage: "textformat")
+                }
+                .menuStyle(.borderlessButton)
+
+                Menu {
+                    Button("Auto") {
+                        model.updateNote(note.id) { $0.fontSize = nil }
+                    }
+                    ForEach(noteSizeChoices, id: \.self) { size in
+                        Button("\(Int(size)) pt") {
+                            model.updateNote(note.id) { $0.fontSize = size }
+                        }
+                    }
+                } label: {
+                    Label(note.fontSize.map { "\(Int($0)) pt" } ?? "Auto", systemImage: "textformat.size")
+                }
+                .menuStyle(.borderlessButton)
+            }
+
+            HStack(spacing: 8) {
+                Toggle("Bold", isOn: Binding(
+                    get: { model.selectedNote?.isBold == true },
+                    set: { value in model.updateNote(note.id) { $0.isBold = value } }
+                ))
+                .toggleStyle(.button)
+                Toggle("Italic", isOn: Binding(
+                    get: { model.selectedNote?.isItalic == true },
+                    set: { value in model.updateNote(note.id) { $0.isItalic = value } }
+                ))
+                .toggleStyle(.button)
+            }
+
+            HStack(spacing: 7) {
+                Text("Color")
+                    .foregroundStyle(.secondary)
+                ForEach(noteColorChoices) { choice in
+                    Button {
+                        model.updateNote(note.id) { $0.color = choice.color }
+                    } label: {
+                        Circle()
+                            .fill(choice.color.swiftUIColor)
+                            .frame(width: 18, height: 18)
+                            .overlay {
+                                Circle()
+                                    .stroke(.white.opacity(0.9), lineWidth: note.color == choice.color ? 2 : 0)
+                            }
+                            .overlay {
+                                Circle()
+                                    .stroke(.black.opacity(note.color == choice.color ? 0.65 : 0.16), lineWidth: note.color == choice.color ? 2 : 1)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .help(choice.name)
+                    .accessibilityLabel("\(choice.name) note color")
+                    .accessibilityAddTraits(note.color == choice.color ? .isSelected : [])
+                }
+            }
+        }
+    }
+}
+
 private struct NoteCard: View {
     let note: TackNote
     let imageURL: URL?
     let isSelected: Bool
+    let isEditing: Bool
+    @Binding var text: String
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         ZStack {
@@ -295,14 +427,18 @@ private struct NoteCard: View {
                     .resizable()
                     .scaledToFill()
                     .clipShape(RoundedRectangle(cornerRadius: 5))
-            } else if !note.text.isEmpty {
-                Text(note.text)
-                    .font(.system(size: max(9, min(22, note.frame.width * 0.14)), weight: .medium, design: .rounded))
+            }
+
+            if isEditing {
+                NoteEditor(note: note, text: $text, isFocused: $isFocused)
+                    .padding(5)
+            } else if imageURL == nil && !note.text.isEmpty {
+                NoteText(note: note)
                     .foregroundStyle(.black.opacity(0.82))
                     .multilineTextAlignment(.leading)
                     .padding(12)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            } else {
+            } else if imageURL == nil {
                 Image(systemName: "plus")
                     .font(.title3)
                     .foregroundStyle(.black.opacity(0.22))
@@ -311,6 +447,69 @@ private struct NoteCard: View {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(isSelected ? Color.accentColor : .black.opacity(0.12), lineWidth: isSelected ? 3 : 1)
         }
+        .onChange(of: isEditing) { _, value in
+            if value {
+                DispatchQueue.main.async { isFocused = true }
+            } else {
+                isFocused = false
+            }
+        }
+        .onAppear {
+            if isEditing {
+                DispatchQueue.main.async { isFocused = true }
+            }
+        }
+    }
+}
+
+private struct NoteEditor: View {
+    let note: TackNote
+    @Binding var text: String
+    @FocusState.Binding var isFocused: Bool
+
+    var body: some View {
+        Group {
+            if note.isItalic == true {
+                TextEditor(text: $text)
+                    .italic()
+                    .focused($isFocused)
+            } else {
+                TextEditor(text: $text)
+                    .focused($isFocused)
+            }
+        }
+        .font(note.displayFont)
+        .fontWeight(note.isBold == true ? .bold : .medium)
+        .foregroundStyle(.black.opacity(0.86))
+        .scrollContentBackground(.hidden)
+        .background(Color.clear)
+    }
+}
+
+private struct NoteText: View {
+    let note: TackNote
+
+    var body: some View {
+        Group {
+            if note.isItalic == true {
+                Text(note.text).italic()
+            } else {
+                Text(note.text)
+            }
+        }
+        .font(note.displayFont)
+        .fontWeight(note.isBold == true ? .bold : .medium)
+    }
+}
+
+private extension TackNote {
+    var displayFont: Font {
+        let size = CGFloat(fontSize ?? max(9, min(22, frame.width * 0.14)))
+        let weight: Font.Weight = isBold == true ? .bold : .medium
+        if let fontName, !fontName.isEmpty {
+            return .custom(fontName, size: size).weight(weight)
+        }
+        return .system(size: size, weight: weight, design: .rounded)
     }
 }
 

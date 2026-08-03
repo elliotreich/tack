@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "TackCapture", targets: ["TackCapture"]),
         .library(name: "TackInterop", targets: ["TackInterop"]),
         .executable(name: "Tack", targets: ["TackApp"]),
+        .executable(name: "TackWidgets", targets: ["TackWidgets"]),
         .executable(name: "tackkit", targets: ["tackkit"])
     ],
     targets: [
@@ -18,6 +19,7 @@ let package = Package(
         .target(name: "TackCapture", dependencies: ["TackCore"]),
         .target(name: "TackInterop", dependencies: ["TackCore", "TackFormat"]),
         .executableTarget(name: "TackApp", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"]),
+        .executableTarget(name: "TackWidgets", dependencies: ["TackCore", "TackFormat"]),
         .executableTarget(name: "tackkit", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"]),
         .testTarget(name: "TackTests", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"])
     ]

@@ -5,6 +5,7 @@ import TackCapture
 import TackFormat
 import TackInterop
 import UniformTypeIdentifiers
+import WidgetKit
 
 enum NoteFilter: Equatable {
     case all
@@ -25,6 +26,7 @@ final class AppModel: ObservableObject {
     @Published var isCapturing = false
     @Published var noteFilter: NoteFilter = .all
     @Published var viewportSize = CGSize(width: 900, height: 650)
+    @Published var editingNoteID: UUID?
     private var autosaveTask: Task<Void, Never>?
 
     init() {
@@ -77,6 +79,9 @@ final class AppModel: ObservableObject {
         board = Board()
         packageURL = nil
         selectedNoteID = nil
+        editingNoteID = nil
+        try? TackWidgetStore.clear()
+        WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
         zoom = 1
         pan = .zero
         noteFilter = .all
@@ -101,6 +106,8 @@ final class AppModel: ObservableObject {
             board = result.board
             packageURL = result.destinationURL
             selectedNoteID = board.notes.first?.id
+            editingNoteID = nil
+            try? publishWidgetSnapshot()
             zoom = 1
             pan = .zero
             noteFilter = .all
@@ -131,6 +138,8 @@ final class AppModel: ObservableObject {
             board = loaded.board
             packageURL = loaded.rootURL
             selectedNoteID = board.notes.first?.id
+            editingNoteID = nil
+            try? publishWidgetSnapshot()
             zoom = 1
             pan = .zero
             noteFilter = .all
@@ -152,6 +161,7 @@ final class AppModel: ObservableObject {
             board.touch()
             try TackPackage.save(board, to: destination)
             packageURL = destination
+            try publishWidgetSnapshot()
             if let status { statusMessage = status }
         } catch {
             presentError(error)
@@ -274,10 +284,47 @@ final class AppModel: ObservableObject {
         for index in board.groups.indices {
             board.groups[index].noteIDs.removeAll { $0 == selectedNoteID }
         }
+        if board.pinnedNoteID == selectedNoteID {
+            board.pinnedNoteID = nil
+            try? TackWidgetStore.clear()
+            WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
+        }
         board.touch()
         self.selectedNoteID = nil
+        editingNoteID = nil
         statusMessage = "Deleted note"
         scheduleAutosave()
+    }
+
+    func beginEditing(_ id: UUID) {
+        selectedNoteID = id
+        editingNoteID = id
+    }
+
+    func endEditing() {
+        editingNoteID = nil
+    }
+
+    func togglePinnedNote() {
+        guard let selectedNoteID, board.notes.contains(where: { $0.id == selectedNoteID }) else { return }
+        if board.pinnedNoteID == selectedNoteID {
+            board.pinnedNoteID = nil
+            do {
+                try TackWidgetStore.clear()
+                WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
+                board.touch()
+                writeBoard(status: "Unpinned note")
+            } catch {
+                presentError(error)
+            }
+        } else {
+            board.pinnedNoteID = selectedNoteID
+            writeBoard(status: "Pinned note to desktop widget")
+        }
+    }
+
+    func isPinned(_ id: UUID) -> Bool {
+        board.pinnedNoteID == id
     }
 
     func updateNote(_ id: UUID, _ update: (inout TackNote) -> Void) {
@@ -285,6 +332,7 @@ final class AppModel: ObservableObject {
         update(&board.notes[index])
         board.notes[index].modifiedAt = Date()
         board.touch()
+        scheduleAutosave()
     }
 
     func setFrame(_ id: UUID, _ frame: TackRect) {
@@ -388,5 +436,30 @@ final class AppModel: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.writeBoard(status: "Autosaved · \(self?.board.notes.count ?? 0) notes")
         }
+    }
+
+    private func publishWidgetSnapshot() throws {
+        guard let pinnedNoteID = board.pinnedNoteID,
+              let note = board.notes.first(where: { $0.id == pinnedNoteID }) else {
+            try TackWidgetStore.clear()
+            WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
+            return
+        }
+
+        let snapshot = TackWidgetSnapshot(
+            boardID: board.id,
+            boardTitle: board.title,
+            noteID: note.id,
+            text: note.text,
+            color: note.color,
+            imagePath: imageURL(for: note)?.path,
+            fontName: note.fontName,
+            fontSize: note.fontSize,
+            isBold: note.isBold,
+            isItalic: note.isItalic,
+            updatedAt: Date()
+        )
+        try TackWidgetStore.save(snapshot)
+        WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
     }
 }

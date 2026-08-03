@@ -54,7 +54,9 @@ Working now:
 - SwiftUI native Mac app and bundled `Tack.app`.
 - Infinite-style panning canvas with zoom-to-fit.
 - Visible `New note` action and keyboard shortcut.
-- Digital notes with editable text, drag movement, selection, deletion, and autosave.
+- Digital notes with double-click inline editing, drag movement, selection, deletion, and autosave.
+- Font, size, bold/italic, and visual color-swatch controls for notes.
+- A bundled `Pinned Note` macOS widget that follows the note selected with `Pin to desktop widget`.
 - Captured notes from an image using Vision rectangle detection and on-device OCR.
 - Captured note images, OCR text, colors, groups, positions, rotation, and provenance.
 - Search across note text and groups.
@@ -70,11 +72,11 @@ The real wall-capture fixture currently produces 30 captured notes with one grou
 
 This repository is the native Mac foundation, not the complete M0–M9 specification yet. The next product layers are:
 
-1. Note resizing, color/paper controls, richer text, and undo/history.
+1. Note resizing, richer text, and undo/history.
 2. Frames, connectors, shapes, canvas-level text, and ink.
 3. Better capture review: missed-note correction, perspective cleanup, and multi-shot wall stitching.
 4. Open archive output, stronger round-trip exporters, and Quick Look previews.
-5. App Intents, Shortcuts, Spotlight, and interactive widgets.
+5. App Intents, Shortcuts, Spotlight, and interactive widget actions.
 6. iOS/iPadOS, optional iCloud sync, and offline peer collaboration.
 
 The acceptance test for the core model is simple: a user can open a blank board, add and arrange digital notes, capture physical notes into the same board, edit both kinds, and export the result without needing a migration project or a cloud account.
@@ -88,7 +90,8 @@ Tack/
 │   ├── TackFormat/     # .tack package read/write and exporters
 │   ├── TackCapture/    # Vision segmentation and OCR
 │   ├── TackInterop/    # Optional legacy .postit importer
-│   └── TackApp/        # Native SwiftUI Mac app
+│   ├── TackApp/        # Native SwiftUI Mac app
+│   └── TackWidgets/    # Pinned-note WidgetKit extension
 ├── Tests/              # Format and real-fixture regression tests
 ├── Resources/          # Info.plist and app icon
 ├── Docs/FORMAT.md      # Open format notes
@@ -104,6 +107,8 @@ open build/Tack.app
 ~~~
 
 Boards created or imported through the app default to `~/Documents/Tack`. Tack does not delete, rewrite, or move the source `.postit` archive.
+
+To use the desktop widget, select a note and choose `Pin to desktop widget` in the inspector or the note's context menu. Then add Tack's `Pinned Note` widget from the macOS widget gallery. macOS requires the user to place a widget through the gallery; Tack publishes the selected note's latest local snapshot for the widget to render.
 
 ## CLI
 
