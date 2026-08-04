@@ -1,0 +1,7 @@
+Tack
+Copyright © 2026 Elliot Reich
+
+The Tack application is licensed under the GNU Affero General Public License,
+version 3 only. The Tack file format, sync protocol, and SDK-facing libraries
+are licensed under the Apache License, version 2.0. See LICENSE and
+LICENSE-APACHE.

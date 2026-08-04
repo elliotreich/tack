@@ -67,7 +67,8 @@ public enum TackImageCapture {
         let useFallback = candidates.isEmpty
         let boxes = useFallback ? [CGRect(x: 0, y: 0, width: 1, height: 1)] : candidates.map(\.boundingBox)
         let groupID = UUID()
-        let resolvedGroupName = groupName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? groupName! : "Capture \(Date.now.formatted(date: .abbreviated, time: .shortened))"
+        let trimmedGroupName = groupName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedGroupName = trimmedGroupName.flatMap { $0.isEmpty ? nil : $0 } ?? "Capture \(Date.now.formatted(date: .abbreviated, time: .shortened))"
 
         var notes: [TackNote] = []
         for box in boxes {

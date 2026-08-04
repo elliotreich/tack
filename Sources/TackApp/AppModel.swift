@@ -446,13 +446,24 @@ final class AppModel: ObservableObject {
             return
         }
 
+        try TackWidgetStore.clear()
+        let widgetImagePath: String?
+        if let sourceURL = imageURL(for: note), FileManager.default.fileExists(atPath: sourceURL.path) {
+            let destinationURL = TackWidgetStore.imageURL(for: note.id, fileExtension: sourceURL.pathExtension)
+            try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
+            widgetImagePath = destinationURL.path
+        } else {
+            widgetImagePath = nil
+        }
+
         let snapshot = TackWidgetSnapshot(
             boardID: board.id,
             boardTitle: board.title,
             noteID: note.id,
             text: note.text,
             color: note.color,
-            imagePath: imageURL(for: note)?.path,
+            imagePath: widgetImagePath,
             fontName: note.fontName,
             fontSize: note.fontSize,
             isBold: note.isBold,

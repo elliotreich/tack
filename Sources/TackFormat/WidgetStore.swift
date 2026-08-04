@@ -44,24 +44,54 @@ public struct TackWidgetSnapshot: Codable, Equatable, Sendable {
 }
 
 public enum TackWidgetStore {
+    public static let appGroupIdentifier = "group.app.tack"
+
     public static var snapshotURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let root = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) ??
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return root
             .appendingPathComponent("Tack", isDirectory: true)
             .appendingPathComponent("widget-snapshot.json")
     }
 
+    public static func imageURL(for noteID: UUID, fileExtension: String = "jpg") -> URL {
+        let safeExtension = fileExtension.filter { $0.isLetter || $0.isNumber }.lowercased()
+        let suffix = safeExtension.isEmpty ? "img" : safeExtension
+        return snapshotURL.deletingLastPathComponent()
+            .appendingPathComponent("pinned-note-\(noteID.uuidString).\(suffix)")
+    }
+
     public static func save(_ snapshot: TackWidgetSnapshot) throws {
-        let directory = snapshotURL.deletingLastPathComponent()
+        try save(snapshot, to: snapshotURL)
+    }
+
+    public static func save(_ snapshot: TackWidgetSnapshot, to url: URL) throws {
+        let directory = url.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try TackPackage.encode(snapshot).write(to: snapshotURL, options: .atomic)
+        try TackPackage.encode(snapshot).write(to: url, options: .atomic)
     }
 
     public static func load() throws -> TackWidgetSnapshot {
-        try TackPackage.decode(TackWidgetSnapshot.self, from: Data(contentsOf: snapshotURL))
+        try load(from: snapshotURL)
+    }
+
+    public static func load(from url: URL) throws -> TackWidgetSnapshot {
+        try TackPackage.decode(TackWidgetSnapshot.self, from: Data(contentsOf: url))
     }
 
     public static func clear() throws {
-        guard FileManager.default.fileExists(atPath: snapshotURL.path) else { return }
-        try FileManager.default.removeItem(at: snapshotURL)
+        try clear(at: snapshotURL)
+        let directory = snapshotURL.deletingLastPathComponent()
+        guard FileManager.default.fileExists(atPath: directory.path) else { return }
+        let imageFiles = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("pinned-note-") }
+        for imageFile in imageFiles {
+            try FileManager.default.removeItem(at: imageFile)
+        }
+    }
+
+    public static func clear(at url: URL) throws {
+        guard FileManager.default.fileExists(atPath: url.path) else { return }
+        try FileManager.default.removeItem(at: url)
     }
 }

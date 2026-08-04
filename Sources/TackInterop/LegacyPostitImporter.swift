@@ -178,7 +178,11 @@ public enum LegacyPostitImporter {
 
         let thumbnailSource = extractionURL.appendingPathComponent("sheet-thumbnail.png")
         if fileManager.fileExists(atPath: thumbnailSource.path) {
-            try? fileManager.copyItem(at: thumbnailSource, to: destinationURL.appendingPathComponent("thumbnail.png"))
+            do {
+                try fileManager.copyItem(at: thumbnailSource, to: destinationURL.appendingPathComponent("thumbnail.png"))
+            } catch {
+                warnings.append("Could not copy the legacy sheet thumbnail: \(error.localizedDescription)")
+            }
         }
 
         board.touch()

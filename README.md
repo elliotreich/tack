@@ -4,7 +4,7 @@ Tack is an open-source, local-first, Apple-native whiteboard and note-capture ap
 
 It starts from the useful part of the Post-it app: photograph a wall of physical notes and turn the result into discrete, movable, editable notes. It also starts from the useful part of Freeform: create notes directly on a canvas, arrange them without a fixed page, and keep the board useful after the original capture is gone.
 
-The product specification is [TACK.md](../../../0_inbox/TACK.md).
+The public product brief is [Docs/PRODUCT.md](Docs/PRODUCT.md). The implementation is intentionally an alpha foundation rather than the complete future roadmap.
 
 ## The product in one sentence
 
@@ -92,10 +92,10 @@ Tack/
 │   ├── TackInterop/    # Optional legacy .postit importer
 │   ├── TackApp/        # Native SwiftUI Mac app
 │   └── TackWidgets/    # Pinned-note WidgetKit extension
-├── Tests/              # Format and real-fixture regression tests
+├── Tests/              # Portable format, importer, exporter, and widget-store tests
 ├── Resources/          # Info.plist and app icon
-├── Docs/FORMAT.md      # Open format notes
-└── scripts/            # App and icon build helpers
+├── Docs/               # Format, product, and release notes
+└── scripts/            # App, icon, and release build helpers
 ~~~
 
 ## Build and run
@@ -110,6 +110,8 @@ Boards created or imported through the app default to `~/Documents/Tack`. Tack d
 
 To use the desktop widget, select a note and choose `Pin to desktop widget` in the inspector or the note's context menu. Then add Tack's `Pinned Note` widget from the macOS widget gallery. macOS requires the user to place a widget through the gallery; Tack publishes the selected note's latest local snapshot for the widget to render.
 
+For a distributable local archive, run `./scripts/build-release.sh`. See [RELEASE.md](RELEASE.md) for Developer ID signing and notarization requirements.
+
 ## CLI
 
 ~~~bash
@@ -121,6 +123,6 @@ swift run tackkit convert legacy.postit Board.tack --retain-captures
 
 ## License and compatibility
 
-The intended license is AGPL-3.0 for the application and Apache-2.0 for the file format, sync protocol, and SDKs. Licensing files will be added before public distribution.
+The application is licensed under [AGPL-3.0-only](LICENSE). The file format, sync protocol, and SDK-facing libraries are licensed under [Apache-2.0](LICENSE-APACHE).
 
 Post-it is a registered trademark of 3M. Tack is an independent project and is not endorsed by or affiliated with 3M.

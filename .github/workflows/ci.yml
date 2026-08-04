@@ -1,0 +1,48 @@
+name: Tack CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: Test and build
+    runs-on: macos-15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check formatting and metadata
+        run: |
+          git diff --check
+          plutil -lint Resources/Info.plist
+          plutil -lint Resources/TackWidgets-Info.plist
+          plutil -lint Resources/Tack.entitlements
+          plutil -lint Resources/TackWidgets.entitlements
+
+      - name: Run tests with coverage
+        run: swift test --enable-code-coverage
+
+      - name: Build release app and widget
+        run: ./scripts/build-app.sh
+
+      - name: Verify app bundle
+        run: |
+          codesign --verify --deep --strict build/Tack.app
+          test -x build/Tack.app/Contents/MacOS/Tack
+          test -x build/Tack.app/Contents/PlugIns/TackWidgets.appex/Contents/MacOS/TackWidgets
+          plutil -p build/Tack.app/Contents/Info.plist
+          plutil -p build/Tack.app/Contents/PlugIns/TackWidgets.appex/Contents/Info.plist
+
+      - name: Archive build artifact
+        run: ditto -c -k --norsrc --keepParent build/Tack.app Tack-${{ github.sha }}.zip
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tack-${{ github.sha }}
+          path: Tack-${{ github.sha }}.zip

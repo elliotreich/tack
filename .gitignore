@@ -1,5 +1,10 @@
 .build/
 build/
+dist/
+.swiftpm/
+*.profraw
+*.profdata
+*.zip
 DerivedData/
 *.xcuserstate
 .DS_Store

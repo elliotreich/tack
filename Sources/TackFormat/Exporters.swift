@@ -18,7 +18,7 @@ public enum TackExporter {
     }
 
     public static func csv(for board: Board) -> String {
-        var lines = ["text,group,color,rotation,x,y,width,height,captured,ocr_confidence,image"]
+        var lines = ["text,group,color,rotation,x,y,width,height,captured,ocr_confidence,image,font,font_size,bold,italic"]
         for note in board.notes {
             let values: [String] = [
                 note.text,
@@ -31,7 +31,11 @@ public enum TackExporter {
                 String(note.frame.height),
                 note.isCaptured ? "true" : "false",
                 note.ocrConfidence.map { String($0) } ?? "",
-                note.imagePath ?? ""
+                note.imagePath ?? "",
+                note.fontName ?? "System",
+                note.fontSize.map { String($0) } ?? "",
+                note.isBold.map { String($0) } ?? "",
+                note.isItalic.map { String($0) } ?? ""
             ]
             lines.append(values.map(escape).joined(separator: ","))
         }

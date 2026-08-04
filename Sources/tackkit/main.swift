@@ -25,16 +25,12 @@ struct TackKit {
         case "validate":
             guard arguments.count >= 2 else { throw CLIError.usage("validate requires a .tack package path") }
             let loaded = try TackPackage.load(from: URL(fileURLWithPath: arguments[1]))
-            let missingImages = loaded.board.notes.filter { note in
-                guard let imagePath = note.imagePath else { return false }
-                return !FileManager.default.fileExists(atPath: loaded.rootURL.appendingPathComponent(imagePath).path)
-            }
+            try TackPackage.validate(loaded.board, in: loaded.rootURL, requireAssets: true)
             print("title=\(loaded.board.title)")
             print("notes=\(loaded.board.notes.count)")
             print("groups=\(loaded.board.groups.count)")
             print("captures=\(loaded.board.captures.count)")
-            print("missing_images=\(missingImages.count)")
-            if !missingImages.isEmpty { throw CLIError.invalid("package has \(missingImages.count) missing note image(s)") }
+            print("missing_images=0")
         case "convert":
             guard arguments.count >= 3 else { throw CLIError.usage("convert requires an input .postit and output .tack path") }
             let options = LegacyImportOptions(retainOriginalCaptures: arguments.contains("--retain-captures"))
