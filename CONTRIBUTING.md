@@ -23,4 +23,4 @@ Do not commit personal boards, captures, OCR output, credentials, or generated r
 
 ## Licensing
 
-Application code is AGPL-3.0-only. The file format, sync protocol, and SDK-facing libraries are Apache-2.0. By contributing, you agree that your contribution is provided under the applicable license for the files you change.
+Application code is AGPL-3.0-only. The file format and SDK-facing libraries are Apache-2.0. By contributing, you agree that your contribution is provided under the applicable license for the files you change.

@@ -1,128 +1,129 @@
 # Tack
 
-Tack is an open-source, local-first, Apple-native whiteboard and note-capture app.
+Tack is a local-first, Apple-native Mac whiteboard intended to replace the useful part of the Post-it app: photograph a wall of physical notes, turn them into discrete editable notes, and keep working with them after the capture is over.
 
-It starts from the useful part of the Post-it app: photograph a wall of physical notes and turn the result into discrete, movable, editable notes. It also starts from the useful part of Freeform: create notes directly on a canvas, arrange them without a fixed page, and keep the board useful after the original capture is gone.
+It adds the half that the old capture workflow does not provide: create a new note without a piece of paper, arrange notes on an infinite-style canvas, edit their text and style, change their colors, search and filter them, and pin one to the Mac desktop as a widget.
 
-The public product brief is [Docs/PRODUCT.md](Docs/PRODUCT.md). The implementation is intentionally an alpha foundation rather than the complete future roadmap.
+Tack is an independent open-source project. It is not affiliated with 3M and is not a 1:1 clone of the Post-it app or Apple Freeform.
 
-## The product in one sentence
+## What Tack is replacing
 
-Tack is a personal and shareable infinite canvas where digital notes and captured paper notes are the same kind of object, stored locally in an open format.
+Tack is designed around a specific replacement workflow:
 
-## Goals
+1. Photograph, scan, or import a wall of physical notes.
+2. Detect the individual notes and transcribe their text on-device.
+3. Preserve each note's image, text, color, position, rotation, group, and capture provenance.
+4. Continue arranging and editing the result as a living board.
 
-### 1. Keep the paper-to-board loop
+The old Post-it workflow is strongest at the capture step, but it does not provide the durable whiteboard that comes after it. Tack keeps the paper-to-board loop and makes the result useful as an ordinary canvas.
+
+Tack also replaces the need to create a physical note just to get an idea onto the board. Digital notes and captured notes use the same model once they are in Tack, so both kinds can be moved, edited, styled, searched, grouped, exported, or pinned to a widget.
+
+This is a workflow replacement, not a promise to reproduce every private storage detail, screen, or brand element of another product. The optional `.postit` importer exists to make existing boards useful and to keep compatibility testable; it is not the product's center of gravity.
+
+## Product goals
+
+### Preserve the paper-to-board loop
 
 - Capture a photograph, scan, screenshot, or exported wall image.
-- Detect individual notes on-device with Vision.
-- OCR each captured note and keep the image, transcription, color, position, rotation, and capture provenance.
-- Treat legacy `.postit` import as compatibility and regression tooling, not as the reason the app exists.
+- Detect note-shaped regions with Vision on the Mac.
+- OCR each captured note on-device.
+- Keep the original crop, transcription, color, position, rotation, group, and provenance together.
 
-### 2. Be a real whiteboard
+### Make the board useful without paper
 
-- The canvas has no hard outer edge.
-- Notes can be moved, edited, searched, filtered, and grouped.
-- A new digital note can be created at any time, even when no physical note or imported board exists.
-- Captured and digital notes share the same editing model once they are on the board.
-- The board should grow toward frames, connectors, shapes, ink, links, and task semantics without replacing the underlying note model.
+- Create a new note on any blank board.
+- Double-click inside a note to type directly.
+- Change font, size, bold, italic, and note color.
+- Move notes around an infinite-style canvas with pan, zoom, search, filters, and groups.
 
-### 3. Be local-first
+### Keep captured and digital notes together
+
+There should not be one editor for photographed notes and another for typed notes. Once a note is on the board, it should be the same kind of object regardless of where it came from.
+
+### Stay local-first and durable
 
 - No account is required.
-- Notes, OCR text, and images stay on the device unless the user exports or syncs them.
-- Boards are ordinary `.tack` packages that can be inspected and backed up with filesystem tools.
-- Autosave should make the safe path the normal path.
+- Notes, OCR text, and images remain on the Mac unless the user exports or syncs them.
+- Boards are inspectable `.tack` directory packages rather than an opaque database.
+- Markdown and CSV exports provide an escape hatch.
 
-### 4. Be a durable replacement, not a clone
+### Feel native on Apple platforms
 
-- Native Apple behavior on Mac first, followed by iPhone and iPad.
-- Keyboard-first controls, accessible note text, drag-and-drop, Quick Look, Spotlight, widgets, and Shortcuts are part of the direction.
-- Export is an escape hatch: Markdown, CSV, PDF, PNG/SVG, and open whiteboard formats should remain useful outside Tack.
-- The project is unaffiliated with 3M and does not use Post-it branding or trade dress.
+Mac is the first platform. The direction includes keyboard controls, accessibility, drag-and-drop, Quick Look, Spotlight, Shortcuts, widgets, and eventually iPhone and iPad support.
 
-## Why infinite canvas is the right model
+## What works today
 
-This is technically manageable at the current stage. Tack already stores notes as world-space rectangles and the UI already has a camera transform (`pan` + `zoom`). The finite feeling came from drawing a 1600×1000 background and fitting the camera to that rectangle, not from a fundamental data-model limitation.
-
-The current implementation removes the visible boundary and fits the camera to the notes that exist. Scaling to thousands of notes is a later renderer problem: spatial indexing, viewport culling, texture caching, and eventually a Metal-backed canvas. It does not require abandoning the current `.tack` model.
-
-## Current macOS implementation
-
-Working now:
-
-- SwiftUI native Mac app and bundled `Tack.app`.
-- Infinite-style panning canvas with zoom-to-fit.
-- Visible `New note` action and keyboard shortcut.
-- Digital notes with double-click inline editing, drag movement, selection, deletion, and autosave.
-- Font, size, bold/italic, and visual color-swatch controls for notes.
-- A bundled `Pinned Note` macOS widget that follows the note selected with `Pin to desktop widget`.
-- Captured notes from an image using Vision rectangle detection and on-device OCR.
-- Captured note images, OCR text, colors, groups, positions, rotation, and provenance.
+- Native SwiftUI Mac app targeting macOS 15.
+- Infinite-style panning and zooming canvas with no visible hard outer edge.
+- New digital notes on blank boards.
+- Double-click inline editing, drag movement, selection, deletion, and autosave.
+- Font, size, bold, italic, and visual color-swatch controls.
+- Vision rectangle detection and on-device OCR for captured images.
+- Captured note images, OCR text, color, group, position, rotation, and provenance.
 - Search across note text and groups.
 - Filters for all notes, captured notes, text-only notes, and capture groups.
 - Markdown and CSV export.
-- Optional `.postit` importer verified against the installed 2025 board.
+- Optional legacy `.postit` import that never modifies the source archive.
+- A `Pinned Note` macOS widget backed by a shared App Group snapshot.
 - `tackkit` commands for capture, validation, and compatibility conversion.
-- Human-readable `.tack` directory packages.
+- Human-readable `.tack` directory packages documented in [Docs/FORMAT.md](Docs/FORMAT.md).
 
-The real wall-capture fixture currently produces 30 captured notes with one group and no missing image assets. The installed 2025 `.postit` fixture imports as 383 notes across 53 groups.
+The repository includes a portable synthetic importer fixture. A private full-board regression can be run locally by setting `TACK_LEGACY_FIXTURE` to a `.postit` archive; personal board data is intentionally not committed.
 
-## What is intentionally next
+## What it does not replace yet
 
-This repository is the native Mac foundation, not the complete M0–M9 specification yet. The next product layers are:
+Tack is an alpha foundation, not yet a complete replacement for every part of Freeform or a collaborative whiteboard service. These are planned layers:
 
-1. Note resizing, richer text, and undo/history.
-2. Frames, connectors, shapes, canvas-level text, and ink.
-3. Better capture review: missed-note correction, perspective cleanup, and multi-shot wall stitching.
-4. Open archive output, stronger round-trip exporters, and Quick Look previews.
-5. App Intents, Shortcuts, Spotlight, and interactive widget actions.
-6. iOS/iPadOS, optional iCloud sync, and offline peer collaboration.
+- Note resizing, richer text, undo, and history.
+- Frames, connectors, shapes, canvas-level text, and ink.
+- Better capture review, missed-note correction, perspective cleanup, and multi-shot wall stitching.
+- PDF, PNG/SVG, and broader open-whiteboard export.
+- Quick Look previews, App Intents, Shortcuts actions, and Spotlight indexing.
+- iPhone/iPad versions, optional iCloud sync, and peer collaboration.
 
-The acceptance test for the core model is simple: a user can open a blank board, add and arrange digital notes, capture physical notes into the same board, edit both kinds, and export the result without needing a migration project or a cloud account.
+The current acceptance test is deliberately smaller: a user can open a blank board, add digital notes, capture physical notes into the same board, edit both kinds, pin one to the desktop, and export the result without an account or migration project.
 
-## Repository layout
+## Why an infinite-style canvas
 
-~~~text
-Tack/
-├── Sources/
-│   ├── TackCore/       # Board, note, capture, group, and canvas models
-│   ├── TackFormat/     # .tack package read/write and exporters
-│   ├── TackCapture/    # Vision segmentation and OCR
-│   ├── TackInterop/    # Optional legacy .postit importer
-│   ├── TackApp/        # Native SwiftUI Mac app
-│   └── TackWidgets/    # Pinned-note WidgetKit extension
-├── Tests/              # Portable format, importer, exporter, and widget-store tests
-├── Resources/          # Info.plist and app icon
-├── Docs/               # Format, product, and release notes
-└── scripts/            # App, icon, and release build helpers
-~~~
+Tack stores notes in world coordinates and the app already has a camera transform for pan and zoom. The initial finite feeling came from the viewport background and fit behavior, not from a hard data-model boundary. The current canvas therefore grows with the notes instead of treating the initial canvas size as a page edge.
+
+Thousands of notes will eventually require spatial indexing, viewport culling, texture caching, and possibly a Metal-backed renderer. Those are scaling improvements, not reasons to abandon the current `.tack` model.
 
 ## Build and run
 
-~~~bash
+Requirements: macOS 15 or later, Swift 6, and the Vision framework available on the Mac.
+
+```bash
 swift test
 ./scripts/build-app.sh
 open build/Tack.app
-~~~
+```
 
 Boards created or imported through the app default to `~/Documents/Tack`. Tack does not delete, rewrite, or move the source `.postit` archive.
 
-To use the desktop widget, select a note and choose `Pin to desktop widget` in the inspector or the note's context menu. Then add Tack's `Pinned Note` widget from the macOS widget gallery. macOS requires the user to place a widget through the gallery; Tack publishes the selected note's latest local snapshot for the widget to render.
-
-For a distributable local archive, run `./scripts/build-release.sh`. See [RELEASE.md](RELEASE.md) for Developer ID signing and notarization requirements.
+To use the desktop widget, select a note, choose `Pin to desktop widget`, and add Tack's `Pinned Note` widget from the macOS widget gallery. See [Docs/TESTING.md](Docs/TESTING.md) for the manual smoke path and [RELEASE.md](RELEASE.md) for signing and notarization.
 
 ## CLI
 
-~~~bash
+```bash
 swift run tackkit capture wall.jpg Board.tack
 swift run tackkit validate Board.tack
 swift run tackkit convert legacy.postit Board.tack
 swift run tackkit convert legacy.postit Board.tack --retain-captures
-~~~
+```
+
+## Repository guide
+
+- [Docs/PRODUCT.md](Docs/PRODUCT.md) — product position, replacement scope, goals, and boundaries.
+- [Docs/FORMAT.md](Docs/FORMAT.md) — `.tack` package structure and compatibility rules.
+- [Docs/TESTING.md](Docs/TESTING.md) — automated checks and hands-on Mac test path.
+- [RELEASE.md](RELEASE.md) — local archives, Developer ID signing, App Groups, and notarization.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — contribution and data-safety rules.
+- [CHANGELOG.md](CHANGELOG.md) — version history.
 
 ## License and compatibility
 
-The application is licensed under [AGPL-3.0-only](LICENSE). The file format, sync protocol, and SDK-facing libraries are licensed under [Apache-2.0](LICENSE-APACHE).
+The application is licensed under [AGPL-3.0-only](LICENSE). The file format and SDK-facing libraries are licensed under [Apache-2.0](LICENSE-APACHE).
 
 Post-it is a registered trademark of 3M. Tack is an independent project and is not endorsed by or affiliated with 3M.
