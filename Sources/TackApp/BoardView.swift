@@ -22,6 +22,14 @@ private let noteColorChoices = [
 private let noteFontChoices = ["System", "Helvetica Neue", "Avenir Next", "Georgia", "Menlo"]
 private let noteSizeChoices: [Double] = [12, 14, 16, 18, 22, 28, 36]
 
+private enum TackUI {
+    static let accent = Color.orange
+    static let panelRadius: CGFloat = 10
+    static let sidebarWidth: CGFloat = 196
+    static let inspectorWidth: CGFloat = 292
+    static let sectionLabel = Font.caption2.weight(.semibold)
+}
+
 struct ContentView: View {
     @ObservedObject var model: AppModel
     @State private var showInspector = true
@@ -29,59 +37,94 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: "pin.fill")
-                    .foregroundStyle(.orange)
-                Text(model.board.title)
-                    .font(.headline)
-                Text("\(model.board.notes.count) notes")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                HStack(spacing: 10) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(TackUI.accent.opacity(0.18))
+                        Image(systemName: "pin.fill")
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(TackUI.accent)
+                    }
+                    .frame(width: 28, height: 28)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(model.board.title)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text("\(model.board.notes.count) \(model.board.notes.count == 1 ? "note" : "notes")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Spacer()
-                Button {
-                    model.addNote()
-                } label: {
-                    Label("New note", systemImage: "plus.square")
+                HStack(spacing: 6) {
+                    Button {
+                        model.addNote()
+                    } label: {
+                        Label("New note", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TackUI.accent)
+                    .controlSize(.small)
+
+                    Button {
+                        model.captureImage()
+                    } label: {
+                        Label(model.isCapturing ? "Capturing…" : "Capture", systemImage: model.isCapturing ? "hourglass" : "camera.viewfinder")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(model.isCapturing)
+
+                    Menu {
+                        Button("Export Markdown…") { model.exportMarkdown() }
+                        Button("Export CSV…") { model.exportCSV() }
+                    } label: {
+                        Label("Export", systemImage: "square.and.arrow.up")
+                    }
+                    .menuStyle(.borderlessButton)
+                    .controlSize(.small)
                 }
-                .buttonStyle(.borderless)
-                Button {
-                    model.captureImage()
-                } label: {
-                    Label(model.isCapturing ? "Capturing…" : "Capture", systemImage: model.isCapturing ? "hourglass" : "camera.viewfinder")
+
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("Search notes and groups", text: $model.searchText)
+                        .textFieldStyle(.plain)
                 }
-                .buttonStyle(.borderless)
-                .disabled(model.isCapturing)
-                Menu {
-                    Button("Export Markdown…") { model.exportMarkdown() }
-                    Button("Export CSV…") { model.exportCSV() }
-                } label: {
-                    Label("Export", systemImage: "square.and.arrow.up")
+                .padding(.horizontal, 9)
+                .padding(.vertical, 6)
+                .background(Color(nsColor: .textBackgroundColor).opacity(0.55), in: RoundedRectangle(cornerRadius: 8))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(.quaternary, lineWidth: 1)
                 }
-                .menuStyle(.borderlessButton)
-                TextField("Search notes and groups", text: $model.searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 220)
+                .frame(width: 220)
+
                 Button {
                     showInspector.toggle()
                 } label: {
                     Label("Inspector", systemImage: "sidebar.right")
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
             .background(.bar)
 
             Divider()
 
             HStack(spacing: 0) {
                 BoardSidebar(model: model)
-                    .frame(width: 180)
+                    .frame(width: TackUI.sidebarWidth)
                 Divider()
                 BoardCanvas(model: model)
                 if showInspector {
                     Divider()
                     NoteInspector(model: model)
-                        .frame(width: 270)
+                        .frame(width: TackUI.inspectorWidth)
                 }
             }
         }
@@ -93,11 +136,14 @@ private struct BoardSidebar: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             Text("BOARD")
-                .font(.caption2.weight(.semibold))
+                .font(TackUI.sectionLabel)
                 .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 6) {
+                .padding(.horizontal, 8)
+                .padding(.bottom, 8)
+
+            VStack(alignment: .leading, spacing: 3) {
                 filterButton("All notes", systemImage: "square.grid.2x2", filter: .all)
                 filterButton("Captured", systemImage: "photo.on.rectangle", filter: .captured)
                 filterButton("Text-only", systemImage: "character.textbox", filter: .textOnly)
@@ -106,20 +152,31 @@ private struct BoardSidebar: View {
 
             if !model.groupNames.isEmpty {
                 Text("GROUPS")
-                    .font(.caption2.weight(.semibold))
+                    .font(TackUI.sectionLabel)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 8)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 18)
+                    .padding(.bottom, 8)
                 ForEach(model.groupNames, id: \.self) { group in
-                    filterButton(group, systemImage: "folder", filter: .group(group))
+                    filterButton(group, systemImage: "folder.fill", filter: .group(group))
                 }
             }
             Spacer()
-            Text(model.statusMessage)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
+            Divider()
+                .padding(.vertical, 10)
+            HStack(alignment: .top, spacing: 7) {
+                Circle()
+                    .fill(TackUI.accent)
+                    .frame(width: 6, height: 6)
+                    .padding(.top, 4)
+                Text(model.statusMessage)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+            .padding(.horizontal, 8)
         }
-        .padding(14)
+        .padding(12)
         .frame(maxHeight: .infinity, alignment: .topLeading)
         .background(Color(nsColor: .controlBackgroundColor))
     }
@@ -138,10 +195,22 @@ private struct BoardSidebar: View {
             } icon: {
                 Image(systemName: systemImage)
             }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 7)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(model.noteFilter == filter ? TackUI.accent.opacity(0.16) : .clear)
+            }
+            .overlay {
+                if model.noteFilter == filter {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(TackUI.accent.opacity(0.28), lineWidth: 1)
+                }
+            }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(model.noteFilter == filter ? Color.accentColor : .primary)
+        .foregroundStyle(model.noteFilter == filter ? TackUI.accent : .primary)
     }
 }
 
@@ -172,7 +241,7 @@ struct BoardCanvas: View {
                         grid.addLine(to: CGPoint(x: size.width, y: y))
                         y += spacing
                     }
-                    context.stroke(grid, with: .color(.black.opacity(0.07)), lineWidth: 0.6)
+                    context.stroke(grid, with: .color(.black.opacity(0.055)), lineWidth: 0.6)
                 }
 
                 ForEach(model.visibleNotes(in: proxy.size)) { note in
@@ -201,17 +270,69 @@ struct BoardCanvas: View {
             .onChange(of: model.board.id) { _, _ in model.fitCanvas(in: proxy.size) }
         }
         .background(Color(nsColor: .underPageBackgroundColor))
+        .overlay(alignment: .center) {
+            if model.board.notes.isEmpty {
+                VStack(spacing: 14) {
+                    ZStack {
+                        Circle()
+                            .fill(TackUI.accent.opacity(0.14))
+                        Image(systemName: "square.and.pencil")
+                            .font(.title2.weight(.medium))
+                            .foregroundStyle(TackUI.accent)
+                    }
+                    .frame(width: 52, height: 52)
+
+                    VStack(spacing: 5) {
+                        Text("Your board is ready")
+                            .font(.title3.weight(.semibold))
+                        Text("Start with a thought, or capture a wall of notes.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    Button {
+                        model.addNote()
+                    } label: {
+                        Label("Add your first note", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TackUI.accent)
+                    .controlSize(.small)
+                }
+                .frame(maxWidth: 300)
+                .padding(28)
+                .background(Color(nsColor: .controlBackgroundColor).opacity(0.96), in: RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(.quaternary, lineWidth: 1)
+                }
+                .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             HStack(spacing: 8) {
-                Button("Fit") { model.fitCanvas(in: model.viewportSize) }
+                Button {
+                    model.fitCanvas(in: model.viewportSize)
+                } label: {
+                    Label("Fit", systemImage: "arrow.up.left.and.arrow.down.right")
+                }
+                .labelStyle(.titleAndIcon)
+                .buttonStyle(.borderless)
                 Slider(value: $model.zoom, in: 0.05...2)
                     .frame(width: 120)
                 Text("\(Int(model.zoom * 100))%")
                     .font(.caption.monospacedDigit())
                     .frame(width: 42, alignment: .trailing)
             }
-            .padding(8)
-            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(.white.opacity(0.12), lineWidth: 1)
+            }
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
             .padding(12)
         }
     }
@@ -227,6 +348,7 @@ private struct PositionedNote: View {
             note: note,
             imageURL: model.imageURL(for: note),
             isSelected: model.selectedNoteID == note.id,
+            isPinned: model.isPinned(note.id),
             isEditing: model.editingNoteID == note.id,
             text: Binding(
                 get: { model.board.notes.first(where: { $0.id == note.id })?.text ?? note.text },
@@ -269,67 +391,156 @@ private struct NoteInspector: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("INSPECTOR")
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center) {
+                Text("INSPECTOR")
+                    .font(TackUI.sectionLabel)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                if model.selectedNote != nil {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 12)
+
+            Divider()
 
             if let note = model.selectedNote {
-                Text(note.groupName ?? (note.isCaptured ? "Captured note" : "Digital note"))
-                    .font(.headline)
-                TextEditor(text: Binding(
-                    get: { model.selectedNote?.text ?? "" },
-                    set: { value in
-                        guard let id = model.selectedNoteID else { return }
-                        model.updateNote(id) { $0.text = value }
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(note.groupName ?? (note.isCaptured ? "Captured note" : "Digital note"))
+                                .font(.title3.weight(.semibold))
+                                .lineLimit(1)
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(note.color.swiftUIColor)
+                                    .frame(width: 8, height: 8)
+                                Text(note.isCaptured ? "Captured from image" : "Created in Tack")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 7) {
+                            Text("CONTENT")
+                                .font(TackUI.sectionLabel)
+                                .foregroundStyle(.secondary)
+                            TextEditor(text: Binding(
+                                get: { model.selectedNote?.text ?? "" },
+                                set: { value in
+                                    guard let id = model.selectedNoteID else { return }
+                                    model.updateNote(id) { $0.text = value }
+                                }
+                            ))
+                            .font(.body)
+                            .scrollContentBackground(.hidden)
+                            .padding(4)
+                            .frame(height: 166)
+                            .background(Color(nsColor: .textBackgroundColor).opacity(0.42), in: RoundedRectangle(cornerRadius: TackUI.panelRadius))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: TackUI.panelRadius)
+                                    .stroke(.quaternary, lineWidth: 1)
+                            }
+                            .overlay(alignment: .topLeading) {
+                                if note.text.isEmpty {
+                                    Text("Write something…")
+                                        .font(.body)
+                                        .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 12)
+                                        .allowsHitTesting(false)
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("STYLE")
+                                .font(TackUI.sectionLabel)
+                                .foregroundStyle(.secondary)
+                            NoteStyleControls(model: model, note: note)
+                        }
+
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("DETAILS")
+                                .font(TackUI.sectionLabel)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 10)
+                                .padding(.bottom, 7)
+                            VStack(spacing: 0) {
+                                detailRow("Position", value: "\(Int(note.frame.x)), \(Int(note.frame.y))")
+                                Divider()
+                                detailRow("OCR", value: note.ocrConfidence.map { "\(Int($0 * 100))%" } ?? "—")
+                            }
+                            .padding(.horizontal, 10)
+                            .background(Color(nsColor: .textBackgroundColor).opacity(0.28), in: RoundedRectangle(cornerRadius: TackUI.panelRadius))
+                        }
+
+                        VStack(spacing: 8) {
+                            Button {
+                                model.togglePinnedNote()
+                            } label: {
+                                Label(
+                                    model.isPinned(note.id) ? "Unpin from desktop" : "Pin to desktop widget",
+                                    systemImage: model.isPinned(note.id) ? "pin.slash" : "pin"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(TackUI.accent)
+
+                            Button(role: .destructive) {
+                                model.deleteSelected()
+                            } label: {
+                                Label("Delete note", systemImage: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                        }
                     }
-                ))
-                .font(.body)
-                .frame(minHeight: 150)
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(.quaternary))
-
-                Text("STYLE")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                NoteStyleControls(model: model, note: note)
-
-                HStack {
-                    Text("Position")
-                    Spacer()
-                    Text("\(Int(note.frame.x)), \(Int(note.frame.y))")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                    .padding(.top, 16)
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 8)
                 }
-                HStack {
-                    Text("OCR")
-                    Spacer()
-                    Text(note.ocrConfidence.map { "\(Int($0 * 100))%" } ?? "—")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                Button {
-                    model.togglePinnedNote()
-                } label: {
-                    Label(
-                        model.isPinned(note.id) ? "Unpin from desktop" : "Pin to desktop widget",
-                        systemImage: model.isPinned(note.id) ? "pin.slash" : "pin"
-                    )
-                }
-                .buttonStyle(.borderless)
-                Button(role: .destructive) {
-                    model.deleteSelected()
-                } label: {
-                    Label("Delete note", systemImage: "trash")
-                }
-                .buttonStyle(.borderless)
             } else {
-                ContentUnavailableView("No note selected", systemImage: "pin", description: Text("Select a note on the canvas to edit its text or move it."))
+                VStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(TackUI.accent.opacity(0.14))
+                        Image(systemName: "cursorarrow.click.2")
+                            .font(.title2.weight(.medium))
+                            .foregroundStyle(TackUI.accent)
+                    }
+                    .frame(width: 52, height: 52)
+                    Text("Choose a note")
+                        .font(.title3.weight(.semibold))
+                    Text("Select a note on the canvas to edit its text, style, or position.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 230)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(16)
             }
-            Spacer()
         }
-        .padding(14)
+        .padding(16)
         .frame(maxHeight: .infinity, alignment: .topLeading)
         .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private func detailRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 8)
     }
 }
 
@@ -347,7 +558,7 @@ private struct NoteStyleControls: View {
                         }
                     }
                 } label: {
-                    Label(note.fontName ?? "System", systemImage: "textformat")
+                    styleMenuLabel(note.fontName ?? "System", systemImage: "textformat")
                 }
                 .menuStyle(.borderlessButton)
 
@@ -361,7 +572,7 @@ private struct NoteStyleControls: View {
                         }
                     }
                 } label: {
-                    Label(note.fontSize.map { "\(Int($0)) pt" } ?? "Auto", systemImage: "textformat.size")
+                    styleMenuLabel(note.fontSize.map { "\(Int($0)) pt" } ?? "Auto", systemImage: "textformat.size")
                 }
                 .menuStyle(.borderlessButton)
             }
@@ -377,9 +588,11 @@ private struct NoteStyleControls: View {
                     set: { value in model.updateNote(note.id) { $0.isItalic = value } }
                 ))
                 .toggleStyle(.button)
+                .tint(TackUI.accent)
             }
+            .tint(TackUI.accent)
 
-            HStack(spacing: 7) {
+            HStack(spacing: 8) {
                 Text("Color")
                     .foregroundStyle(.secondary)
                 ForEach(noteColorChoices) { choice in
@@ -388,14 +601,10 @@ private struct NoteStyleControls: View {
                     } label: {
                         Circle()
                             .fill(choice.color.swiftUIColor)
-                            .frame(width: 18, height: 18)
+                            .frame(width: 20, height: 20)
                             .overlay {
                                 Circle()
-                                    .stroke(.white.opacity(0.9), lineWidth: note.color == choice.color ? 2 : 0)
-                            }
-                            .overlay {
-                                Circle()
-                                    .stroke(.black.opacity(note.color == choice.color ? 0.65 : 0.16), lineWidth: note.color == choice.color ? 2 : 1)
+                                    .stroke(note.color == choice.color ? TackUI.accent : .black.opacity(0.16), lineWidth: note.color == choice.color ? 2.5 : 1)
                             }
                     }
                     .buttonStyle(.plain)
@@ -406,27 +615,42 @@ private struct NoteStyleControls: View {
             }
         }
     }
+
+    private func styleMenuLabel(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+            Text(title)
+                .lineLimit(1)
+            Image(systemName: "chevron.down")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(Color(nsColor: .textBackgroundColor).opacity(0.38), in: RoundedRectangle(cornerRadius: 8))
+    }
 }
 
 private struct NoteCard: View {
     let note: TackNote
     let imageURL: URL?
     let isSelected: Bool
+    let isPinned: Bool
     let isEditing: Bool
     @Binding var text: String
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 5)
+        ZStack(alignment: .topTrailing) {
+            RoundedRectangle(cornerRadius: 8)
                 .fill(note.color.swiftUIColor)
-                .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
+                .shadow(color: .black.opacity(isSelected ? 0.24 : 0.16), radius: isSelected ? 8 : 4, y: isSelected ? 4 : 2)
 
             if let imageURL, let nsImage = NSImage(contentsOf: imageURL) {
                 Image(nsImage: nsImage)
                     .resizable()
                     .scaledToFill()
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
             if isEditing {
@@ -444,8 +668,17 @@ private struct NoteCard: View {
                     .foregroundStyle(.black.opacity(0.22))
             }
 
-            RoundedRectangle(cornerRadius: 5)
-                .stroke(isSelected ? Color.accentColor : .black.opacity(0.12), lineWidth: isSelected ? 3 : 1)
+            if isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.black.opacity(0.68))
+                    .padding(6)
+                    .background(.white.opacity(0.42), in: Circle())
+                    .padding(7)
+            }
+
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? TackUI.accent : .black.opacity(0.14), lineWidth: isSelected ? 2.5 : 1)
         }
         .onChange(of: isEditing) { _, value in
             if value {
