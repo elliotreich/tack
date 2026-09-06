@@ -1,0 +1,71 @@
+name: Tack
+options:
+  deploymentTarget:
+    macOS: "15.0"
+packages:
+  TackPackage:
+    path: .
+targets:
+  Tack:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/TackApp
+    dependencies:
+      - target: TackWidgets
+        embed: true
+      - package: TackPackage
+        product: TackCore
+      - package: TackPackage
+        product: TackFormat
+      - package: TackPackage
+        product: TackCapture
+      - package: TackPackage
+        product: TackInterop
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.tack.Tack
+        INFOPLIST_FILE: Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/Tack.entitlements
+        MACOSX_DEPLOYMENT_TARGET: 15.0
+  TackWidgets:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/TackWidgets
+    dependencies:
+      - package: TackPackage
+        product: TackCore
+      - package: TackPackage
+        product: TackFormat
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.tack.Tack.widgets
+        INFOPLIST_FILE: Resources/TackWidgets-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Resources/TackWidgets.entitlements
+        MACOSX_DEPLOYMENT_TARGET: 15.0
+        SKIP_INSTALL: YES
+  tackkit:
+    type: tool
+    platform: macOS
+    sources:
+      - path: Sources/tackkit
+    dependencies:
+      - package: TackPackage
+        product: TackCore
+      - package: TackPackage
+        product: TackFormat
+      - package: TackPackage
+        product: TackCapture
+      - package: TackPackage
+        product: TackInterop
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.tack.tackkit
+        MACOSX_DEPLOYMENT_TARGET: 15.0
+schemes:
+  Tack:
+    build:
+      targets:
+        Tack: all
+        TackWidgets: all

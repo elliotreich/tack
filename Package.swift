@@ -19,7 +19,16 @@ let package = Package(
         .target(name: "TackCapture", dependencies: ["TackCore"]),
         .target(name: "TackInterop", dependencies: ["TackCore", "TackFormat"]),
         .executableTarget(name: "TackApp", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"]),
-        .executableTarget(name: "TackWidgets", dependencies: ["TackCore", "TackFormat"]),
+        // SwiftPM does not create an Xcode Widget Extension target for us. The
+        // WidgetKit runtime therefore needs the same extension entry point that
+        // Xcode supplies when it links a real .appex target.
+        .executableTarget(
+            name: "TackWidgets",
+            dependencies: ["TackCore", "TackFormat"],
+            linkerSettings: [
+                .unsafeFlags(["-Xlinker", "-e", "-Xlinker", "_NSExtensionMain"])
+            ]
+        ),
         .executableTarget(name: "tackkit", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"]),
         .testTarget(name: "TackTests", dependencies: ["TackCore", "TackFormat", "TackCapture", "TackInterop"])
     ]

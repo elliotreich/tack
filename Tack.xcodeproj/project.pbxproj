@@ -1,0 +1,608 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0ADA81878C91D3B25E2CE52D /* TackCapture in Frameworks */ = {isa = PBXBuildFile; productRef = 405B92CB45D67E0C8ED3AC25 /* TackCapture */; };
+		0D5F149C976E89782239E8A0 /* TackCore in Frameworks */ = {isa = PBXBuildFile; productRef = 46FDAE7470D59EF2C73C3212 /* TackCore */; };
+		0F03B03B87040713D0A76D3E /* TackWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4B99F5BA2964599022586595 /* TackWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		262F361FDC02AA7467D8B5CC /* TackFormat in Frameworks */ = {isa = PBXBuildFile; productRef = 5587F5241C827F6379F20F80 /* TackFormat */; };
+		296892D917EFAAD69C936B7D /* TackFormat in Frameworks */ = {isa = PBXBuildFile; productRef = 42CEEC8CBE4906D480B62758 /* TackFormat */; };
+		583D2ED07BA5E618B9B25CA8 /* TackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E52F98F99547C495CFD9AF77 /* TackApp.swift */; };
+		910CCCACCF7AC79ECCF402D8 /* TackCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3B1E7C156C1CA3752BEDD580 /* TackCore */; };
+		94960FE0CBBB1A7A5AB8FBB0 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1690278F54031F7B3C4893 /* main.swift */; };
+		9B161035511739B04039F8BB /* TackCapture in Frameworks */ = {isa = PBXBuildFile; productRef = DF2C6A79F713019647D3CD1D /* TackCapture */; };
+		B3557BCB3DFD96E7B3BF49DF /* TackWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D81C399CC60D52A98E9233 /* TackWidgets.swift */; };
+		C19F6A00D4E54045EA7C0E5A /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76129051364C3114D24D8C9E /* AppModel.swift */; };
+		CA55D5A7D126CD48B5763E15 /* TackFormat in Frameworks */ = {isa = PBXBuildFile; productRef = BE355E34191B292815D7D6A3 /* TackFormat */; };
+		D096F246493DC10E6492A196 /* TackCore in Frameworks */ = {isa = PBXBuildFile; productRef = C665E51E11AACB14CD35C49A /* TackCore */; };
+		EA242DC3BE52B82598341BE1 /* TackInterop in Frameworks */ = {isa = PBXBuildFile; productRef = D57C1DDE40F0C95455664293 /* TackInterop */; };
+		F55D86DBD9E159096A85FD4A /* TackInterop in Frameworks */ = {isa = PBXBuildFile; productRef = B9534D87A0C3372A185C349C /* TackInterop */; };
+		F59B10C88960BA43B2D814D1 /* BoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EF125072E29A22405B909D /* BoardView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CDAAED0565AD474823D9389D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 95079B7DAAA9FB5B837C3C34 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DEC15EFC9DC8212CE30CAF19;
+			remoteInfo = TackWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		7A8D0EFD323B3E4FBFFBDB79 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				0F03B03B87040713D0A76D3E /* TackWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		09EF125072E29A22405B909D /* BoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardView.swift; sourceTree = "<group>"; };
+		1CF541C86474486D5DF60D58 /* Tack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B99F5BA2964599022586595 /* TackWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TackWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6EB63D2E82316EA8E1C2CC47 /* tackkit */ = {isa = PBXFileReference; includeInIndex = 0; path = tackkit; sourceTree = BUILT_PRODUCTS_DIR; };
+		76129051364C3114D24D8C9E /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		83D81C399CC60D52A98E9233 /* TackWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TackWidgets.swift; sourceTree = "<group>"; };
+		8C1690278F54031F7B3C4893 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		E52F98F99547C495CFD9AF77 /* TackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TackApp.swift; sourceTree = "<group>"; };
+		F25AB19100C698B78C5F0A42 /* Tack */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Tack; path = .; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4827837F2687F725EAAFA956 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				910CCCACCF7AC79ECCF402D8 /* TackCore in Frameworks */,
+				296892D917EFAAD69C936B7D /* TackFormat in Frameworks */,
+				9B161035511739B04039F8BB /* TackCapture in Frameworks */,
+				F55D86DBD9E159096A85FD4A /* TackInterop in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65689640C0DF64F701347766 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0D5F149C976E89782239E8A0 /* TackCore in Frameworks */,
+				CA55D5A7D126CD48B5763E15 /* TackFormat in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B9029496793094298F609ECC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D096F246493DC10E6492A196 /* TackCore in Frameworks */,
+				262F361FDC02AA7467D8B5CC /* TackFormat in Frameworks */,
+				0ADA81878C91D3B25E2CE52D /* TackCapture in Frameworks */,
+				EA242DC3BE52B82598341BE1 /* TackInterop in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0C8B08DD992DBB8F91B6264E /* TackApp */ = {
+			isa = PBXGroup;
+			children = (
+				76129051364C3114D24D8C9E /* AppModel.swift */,
+				09EF125072E29A22405B909D /* BoardView.swift */,
+				E52F98F99547C495CFD9AF77 /* TackApp.swift */,
+			);
+			name = TackApp;
+			path = Sources/TackApp;
+			sourceTree = "<group>";
+		};
+		19F04591FE02FA9A6BC9BCD7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1CF541C86474486D5DF60D58 /* Tack.app */,
+				6EB63D2E82316EA8E1C2CC47 /* tackkit */,
+				4B99F5BA2964599022586595 /* TackWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6F560334F6CC99DAF7AE67AB /* tackkit */ = {
+			isa = PBXGroup;
+			children = (
+				8C1690278F54031F7B3C4893 /* main.swift */,
+			);
+			name = tackkit;
+			path = Sources/tackkit;
+			sourceTree = "<group>";
+		};
+		9D15F0EAE841D6E0DD9D9E1E = {
+			isa = PBXGroup;
+			children = (
+				C3615118781B66E602F44799 /* Packages */,
+				0C8B08DD992DBB8F91B6264E /* TackApp */,
+				6F560334F6CC99DAF7AE67AB /* tackkit */,
+				C04FFF6E912FA29EF0514241 /* TackWidgets */,
+				19F04591FE02FA9A6BC9BCD7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C04FFF6E912FA29EF0514241 /* TackWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				83D81C399CC60D52A98E9233 /* TackWidgets.swift */,
+			);
+			name = TackWidgets;
+			path = Sources/TackWidgets;
+			sourceTree = "<group>";
+		};
+		C3615118781B66E602F44799 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				F25AB19100C698B78C5F0A42 /* Tack */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		3FC4398D9E76BA4CC45B9CE8 /* tackkit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 263DC4319A805B66A674BDDB /* Build configuration list for PBXNativeTarget "tackkit" */;
+			buildPhases = (
+				672A6E8B940C868A5AC578D6 /* Sources */,
+				4827837F2687F725EAAFA956 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = tackkit;
+			packageProductDependencies = (
+				3B1E7C156C1CA3752BEDD580 /* TackCore */,
+				42CEEC8CBE4906D480B62758 /* TackFormat */,
+				DF2C6A79F713019647D3CD1D /* TackCapture */,
+				B9534D87A0C3372A185C349C /* TackInterop */,
+			);
+			productName = tackkit;
+			productReference = 6EB63D2E82316EA8E1C2CC47 /* tackkit */;
+			productType = "com.apple.product-type.tool";
+		};
+		BCA0CC5C3C9AFDBFDBCCB839 /* Tack */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 77AA77A8435D70B83E0D3944 /* Build configuration list for PBXNativeTarget "Tack" */;
+			buildPhases = (
+				87CE0DE25315B72F0FE72271 /* Sources */,
+				B9029496793094298F609ECC /* Frameworks */,
+				7A8D0EFD323B3E4FBFFBDB79 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6F50F11458F47F348F0B55FA /* PBXTargetDependency */,
+			);
+			name = Tack;
+			packageProductDependencies = (
+				C665E51E11AACB14CD35C49A /* TackCore */,
+				5587F5241C827F6379F20F80 /* TackFormat */,
+				405B92CB45D67E0C8ED3AC25 /* TackCapture */,
+				D57C1DDE40F0C95455664293 /* TackInterop */,
+			);
+			productName = Tack;
+			productReference = 1CF541C86474486D5DF60D58 /* Tack.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DEC15EFC9DC8212CE30CAF19 /* TackWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F60A0888775BA17D141CB7D2 /* Build configuration list for PBXNativeTarget "TackWidgets" */;
+			buildPhases = (
+				0F0B355747D5363DBDD8D966 /* Sources */,
+				65689640C0DF64F701347766 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TackWidgets;
+			packageProductDependencies = (
+				46FDAE7470D59EF2C73C3212 /* TackCore */,
+				BE355E34191B292815D7D6A3 /* TackFormat */,
+			);
+			productName = TackWidgets;
+			productReference = 4B99F5BA2964599022586595 /* TackWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		95079B7DAAA9FB5B837C3C34 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 5065AB5ACFBD412781FB6F85 /* Build configuration list for PBXProject "Tack" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9D15F0EAE841D6E0DD9D9E1E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CA0573C04569661A2F6979E7 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 19F04591FE02FA9A6BC9BCD7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BCA0CC5C3C9AFDBFDBCCB839 /* Tack */,
+				DEC15EFC9DC8212CE30CAF19 /* TackWidgets */,
+				3FC4398D9E76BA4CC45B9CE8 /* tackkit */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0F0B355747D5363DBDD8D966 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B3557BCB3DFD96E7B3BF49DF /* TackWidgets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		672A6E8B940C868A5AC578D6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94960FE0CBBB1A7A5AB8FBB0 /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		87CE0DE25315B72F0FE72271 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C19F6A00D4E54045EA7C0E5A /* AppModel.swift in Sources */,
+				F59B10C88960BA43B2D814D1 /* BoardView.swift in Sources */,
+				583D2ED07BA5E618B9B25CA8 /* TackApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6F50F11458F47F348F0B55FA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DEC15EFC9DC8212CE30CAF19 /* TackWidgets */;
+			targetProxy = CDAAED0565AD474823D9389D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2623BBE3BF717C4F455CA753 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Resources/TackWidgets.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Resources/TackWidgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.Tack.widgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		39713B71A1FB4210299B99EB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		3FDFCC5AC848298033A4D501 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5096E169DA92F087FF8FCE16 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.tackkit;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		981B25A4F7B38681C8358C86 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.tackkit;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		A5CA154938FAB3C6A0B497AD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/Tack.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.Tack;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		DA103FAD92A760CC46473EB8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Resources/Tack.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.Tack;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		FFF31F7B7851058D97CFDB87 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Resources/TackWidgets.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = "Resources/TackWidgets-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tack.Tack.widgets;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		263DC4319A805B66A674BDDB /* Build configuration list for PBXNativeTarget "tackkit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5096E169DA92F087FF8FCE16 /* Debug */,
+				981B25A4F7B38681C8358C86 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5065AB5ACFBD412781FB6F85 /* Build configuration list for PBXProject "Tack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3FDFCC5AC848298033A4D501 /* Debug */,
+				39713B71A1FB4210299B99EB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		77AA77A8435D70B83E0D3944 /* Build configuration list for PBXNativeTarget "Tack" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA103FAD92A760CC46473EB8 /* Debug */,
+				A5CA154938FAB3C6A0B497AD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F60A0888775BA17D141CB7D2 /* Build configuration list for PBXNativeTarget "TackWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2623BBE3BF717C4F455CA753 /* Debug */,
+				FFF31F7B7851058D97CFDB87 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CA0573C04569661A2F6979E7 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3B1E7C156C1CA3752BEDD580 /* TackCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackCore;
+		};
+		405B92CB45D67E0C8ED3AC25 /* TackCapture */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackCapture;
+		};
+		42CEEC8CBE4906D480B62758 /* TackFormat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackFormat;
+		};
+		46FDAE7470D59EF2C73C3212 /* TackCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackCore;
+		};
+		5587F5241C827F6379F20F80 /* TackFormat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackFormat;
+		};
+		B9534D87A0C3372A185C349C /* TackInterop */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackInterop;
+		};
+		BE355E34191B292815D7D6A3 /* TackFormat */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackFormat;
+		};
+		C665E51E11AACB14CD35C49A /* TackCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackCore;
+		};
+		D57C1DDE40F0C95455664293 /* TackInterop */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackInterop;
+		};
+		DF2C6A79F713019647D3CD1D /* TackCapture */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TackCapture;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 95079B7DAAA9FB5B837C3C34 /* Project object */;
+}
