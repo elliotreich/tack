@@ -27,22 +27,18 @@ jobs:
       - name: Run tests with coverage
         run: swift test --enable-code-coverage
 
-      - name: Build release app and widget
-        run: ./scripts/build-app.sh
-
-      - name: Verify app bundle
+      # CI runners cannot sign with the private Apple Team identity required
+      # for Tack's shared App Group. Only authenticated local release builds
+      # should create installable .app bundles via scripts/build-app.sh.
+      - name: Compile release executables
         run: |
-          codesign --verify --deep --strict build/Tack.app
-          test -x build/Tack.app/Contents/MacOS/Tack
-          test -x build/Tack.app/Contents/PlugIns/TackWidgets.appex/Contents/MacOS/TackWidgets
-          plutil -p build/Tack.app/Contents/Info.plist
-          plutil -p build/Tack.app/Contents/PlugIns/TackWidgets.appex/Contents/Info.plist
+          swift build -c release --product Tack
+          swift build -c release --product TackWidgets
+          swift build -c release --product tackkit
 
-      - name: Archive build artifact
-        run: ditto -c -k --norsrc --keepParent build/Tack.app Tack-${{ github.sha }}.zip
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Tack-${{ github.sha }}
-          path: Tack-${{ github.sha }}.zip
+      - name: Verify release executables
+        run: |
+          BIN_DIR="$(swift build -c release --show-bin-path)"
+          test -x "$BIN_DIR/Tack"
+          test -x "$BIN_DIR/TackWidgets"
+          test -x "$BIN_DIR/tackkit"

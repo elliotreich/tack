@@ -483,10 +483,14 @@ final class AppModel: ObservableObject {
         zoom = min(1.25, max(0.08, min(usable.width / worldWidth, usable.height / worldHeight)))
         let leftWorld = bounds.x - padding
         let topWorld = bounds.y - padding
-        pan = CGSize(
-            width: (size.width - worldWidth * zoom) / 2 - leftWorld * zoom,
-            height: (size.height - worldHeight * zoom) / 2 - topWorld * zoom
-        )
+        // Keep these as simple CGFloat expressions for older Swift compilers in CI.
+        let scaledWidth = CGFloat(worldWidth) * zoom
+        let scaledHeight = CGFloat(worldHeight) * zoom
+        let originX = CGFloat(leftWorld) * zoom
+        let originY = CGFloat(topWorld) * zoom
+        let offsetX = (size.width - scaledWidth) / 2 - originX
+        let offsetY = (size.height - scaledHeight) / 2 - originY
+        pan = CGSize(width: offsetX, height: offsetY)
     }
 
     func visibleNotes(in size: CGSize) -> [TackNote] {
