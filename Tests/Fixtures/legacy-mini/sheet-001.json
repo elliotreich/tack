@@ -20,6 +20,7 @@
         {
           "isDigitalNote": false,
           "noteUUID": "22222222-2222-4222-8222-222222222222",
+          "board": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "centerX": 160,
           "centerY": 120,
           "width": 80,

@@ -7,7 +7,7 @@ swift test --enable-code-coverage
 ./scripts/build-app.sh
 ```
 
-The optional full legacy regression test runs when `TACK_LEGACY_FIXTURE` points to the installed `.postit` archive. The portable fixture is always included so CI tests the importer without personal data.
+The optional full legacy regression test runs when `TACK_LEGACY_FIXTURE` points to an installed `.postit` archive. It checks that note crops and original capture photos load as required assets. The portable synthetic fixture is always included so CI tests import, text/layout preservation, and capture metadata without personal data.
 
 For a local smoke test after the automated suite passes:
 

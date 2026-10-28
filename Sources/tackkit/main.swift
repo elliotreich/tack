@@ -33,7 +33,7 @@ struct TackKit {
             print("missing_images=0")
         case "convert":
             guard arguments.count >= 3 else { throw CLIError.usage("convert requires an input .postit and output .tack path") }
-            let options = LegacyImportOptions(retainOriginalCaptures: arguments.contains("--retain-captures"))
+            let options = LegacyImportOptions(retainOriginalCaptures: !arguments.contains("--omit-captures"))
             let result = try LegacyPostitImporter.importArchive(
                 at: URL(fileURLWithPath: arguments[1]),
                 to: URL(fileURLWithPath: arguments[2]),
@@ -73,7 +73,7 @@ struct TackKit {
 
         Usage:
           tackkit validate board.tack
-          tackkit convert legacy.postit board.tack [--retain-captures]
+          tackkit convert legacy.postit board.tack [--omit-captures]
           tackkit capture wall.jpg board.tack
         """)
     }

@@ -1,10 +1,10 @@
 # Tack
 
-Tack is a local-first, Apple-native Mac whiteboard intended to replace the useful part of the Post-it app: photograph a wall of physical notes, turn them into discrete editable notes, and keep working with them after the capture is over.
+Tack is an open-source, local-first Mac alternative for turning Post-it `.postit` exports and photographs of physical note walls into editable boards.
 
 It adds the half that the old capture workflow does not provide: create a new note without a piece of paper, arrange notes on an infinite-style canvas, edit their text and style, change their colors, search and filter them, and pin one to the Mac desktop as a widget.
 
-Tack is an independent open-source project. It is not affiliated with 3M and is not a 1:1 clone of the Post-it app or Apple Freeform.
+Tack is an independent project and is not affiliated with 3M.
 
 ## What Tack is replacing
 
@@ -107,13 +107,17 @@ Boards created or imported through the app default to `~/Documents/Tack`. Tack d
 
 To use the desktop widget, select a note, choose `Pin to desktop widget`, and add Tack's `Pinned Note` widget from the macOS widget gallery. See [Docs/TESTING.md](Docs/TESTING.md) for the manual smoke path and [RELEASE.md](RELEASE.md) for signing and notarization.
 
+### Post-it archive compatibility
+
+Tack imports a `.postit` export as one editable board. It preserves the first sheet's note text, colors, groups, positions, sizes, rotations, note images, and available source capture photos and dates. Source capture files are retained by default; `tackkit convert` can omit them with `--omit-captures`. Tack is focused on personal editable boards: it does not yet recreate the Post-it app's capture workflow, collaboration, or full history. Its desktop widget currently shows one pinned note for the app.
+
 ## CLI
 
 ```bash
 swift run tackkit capture wall.jpg Board.tack
 swift run tackkit validate Board.tack
 swift run tackkit convert legacy.postit Board.tack
-swift run tackkit convert legacy.postit Board.tack --retain-captures
+swift run tackkit convert legacy.postit Board.tack --omit-captures
 ```
 
 ## Repository guide

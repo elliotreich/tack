@@ -56,6 +56,29 @@ final class TackFormatTests: XCTestCase {
         XCTAssertEqual(loaded.board.notes.count, 2)
     }
 
+    func testLegacyImportPreservesSourceCaptureByDefault() throws {
+        let archive = try makeLegacyArchive()
+        defer { try? FileManager.default.removeItem(at: archive) }
+
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("tack-import-capture-\(UUID().uuidString).tack")
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let result = try LegacyPostitImporter.importArchive(at: archive, to: root)
+        XCTAssertEqual(result.board.captures.count, 1)
+        let capture = try XCTUnwrap(result.board.captures.first)
+        XCTAssertEqual(capture.sourceFilename, "capture-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.jpg")
+        XCTAssertNotNil(capture.capturedAt)
+        XCTAssertEqual(capture.imagePath, "media/captures/capture-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.jpg")
+
+        let captureURL = root.appendingPathComponent(try XCTUnwrap(capture.imagePath))
+        let fixtureURL = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/legacy-mini/capture-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.jpg")
+        XCTAssertEqual(try Data(contentsOf: captureURL), try Data(contentsOf: fixtureURL))
+        try TackPackage.validate(result.board, in: root, requireAssets: true)
+    }
+
     func testRealLegacyArchiveImportsWhenConfigured() throws {
         guard let fixturePath = ProcessInfo.processInfo.environment["TACK_LEGACY_FIXTURE"] else {
             throw XCTSkip("set TACK_LEGACY_FIXTURE to run the full local Post-it regression fixture")
@@ -71,6 +94,9 @@ final class TackFormatTests: XCTestCase {
         XCTAssertEqual(result.board.groups.count, 53)
         XCTAssertGreaterThan(result.copiedNoteImageCount, 350)
         XCTAssertEqual(result.board.title, "2025")
+        XCTAssertEqual(result.board.captures.count, 36)
+        XCTAssertEqual(result.board.captures.filter { $0.imagePath != nil }.count, 36)
+        try TackPackage.validate(result.board, in: root, requireAssets: true)
     }
 
     func testOlderBoardWithoutNewOptionalFieldsStillLoads() throws {

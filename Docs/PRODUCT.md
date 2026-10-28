@@ -27,7 +27,7 @@ The old capture workflow is incomplete if the result cannot continue to evolve. 
 - pan and zoom beyond a finite page edge;
 - pin a selected note to the Mac desktop as a widget.
 
-Tack is not currently a complete replacement for every Freeform feature, a cloud collaboration service, or a drop-in clone of the Post-it app. The goal is to replace the original personal paper-to-board workflow first, then provide the same durable foundation to other people who used that workflow.
+Tack is an open-source Mac alternative focused on the personal paper-to-board workflow. It does not yet include cloud collaboration, full capture history, or every Freeform feature; its desktop widget currently displays one pinned note per app.
 
 ## Product goals
 

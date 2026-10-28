@@ -5,7 +5,7 @@ import TackFormat
 public struct LegacyImportOptions: Sendable {
     public var retainOriginalCaptures: Bool
 
-    public init(retainOriginalCaptures: Bool = false) {
+    public init(retainOriginalCaptures: Bool = true) {
         self.retainOriginalCaptures = retainOriginalCaptures
     }
 }
@@ -174,6 +174,11 @@ public enum LegacyPostitImporter {
                     try fileManager.copyItem(at: source, to: destination)
                 }
             }
+
+            board.captures = try importedCaptures(
+                for: captures,
+                extractedAt: extractionURL
+            )
         }
 
         let thumbnailSource = extractionURL.appendingPathComponent("sheet-thumbnail.png")
@@ -214,6 +219,47 @@ public enum LegacyPostitImporter {
         } catch {
             throw LegacyPostitError.invalidJSON(error.localizedDescription)
         }
+    }
+
+    private static func importedCaptures(for captureIDs: Set<String>, extractedAt rootURL: URL) throws -> [TackCapture] {
+        let fileManager = FileManager.default
+        let files = try fileManager.contentsOfDirectory(at: rootURL, includingPropertiesForKeys: nil)
+        var imagesByID: [String: URL] = [:]
+        var metadataByID: [String: URL] = [:]
+        for file in files where file.lastPathComponent.hasPrefix("capture-") {
+            let id = file.deletingPathExtension().lastPathComponent
+                .replacingOccurrences(of: "^capture-", with: "", options: .regularExpression)
+                .lowercased()
+            switch file.pathExtension.lowercased() {
+            case "jpg", "jpeg": imagesByID[id] = file
+            case "json": metadataByID[id] = file
+            default: continue
+            }
+        }
+
+        return captureIDs.sorted().compactMap { rawID in
+            guard let id = UUID(uuidString: rawID) else { return nil }
+            let key = id.uuidString.lowercased()
+            let image = imagesByID[key]
+            let metadata = metadataByID[key].flatMap { try? decode(LegacyCaptureMetadata.self, from: Data(contentsOf: $0)) }
+            let filename = image?.lastPathComponent
+            return TackCapture(
+                id: id,
+                sourceFilename: filename,
+                capturedAt: parseCaptureDate(metadata?.captureDate),
+                imagePath: filename.map { "media/captures/\($0)" }
+            )
+        }
+    }
+
+    private static func parseCaptureDate(_ value: String?) -> Date? {
+        guard let value else { return nil }
+        let formatter = ISO8601DateFormatter()
+        return formatter.date(from: value)
+            ?? {
+                formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                return formatter.date(from: value)
+            }()
     }
 
     private static func uniqueUUID(preferred: String?, used: inout Set<UUID>) -> UUID {
@@ -341,4 +387,12 @@ private struct LegacyColor: Decodable {
 private struct LegacyOCR: Decodable {
     let text: String?
     let confidence: Double?
+}
+
+private struct LegacyCaptureMetadata: Decodable {
+    let captureDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case captureDate
+    }
 }

@@ -22,6 +22,8 @@ Digital note typography is stored on the note as optional `fontName`, `fontSize`
 
 The widget snapshot is stored outside the board package in the shared macOS App Group container `YAU948K7T5.app.tack`. This uses the macOS team-identifier app-group format, which macOS authorizes against the signing team without a provisioning profile. The package stores only the selected note ID, so deleting or moving a board does not create a second board copy. If the pinned note has an image, Tack copies only that image into the same shared container for the widget; the widget never needs direct access to the board package.
 
+When importing a `.postit` archive, note crops are stored under `media/notes/`. Available original capture photos and their source metadata are retained under `media/captures/` by default, and linked from the board's capture records. The optional `--omit-captures` converter flag skips those originals.
+
 The legacy `.postit` importer preserves:
 
 - board title;
@@ -30,6 +32,6 @@ The legacy `.postit` importer preserves:
 - note color, size, position, rotation, and capture provenance;
 - cluster/group names and membership;
 - OCR confidence where present;
-- optional original capture photos when `tackkit convert --retain-captures` is used.
+- original capture photos when present (unless `tackkit convert --omit-captures` is used).
 
 No source archive is modified. Imported packages are newly created under the user's Tack folder.
