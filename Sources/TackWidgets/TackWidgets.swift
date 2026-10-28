@@ -36,43 +36,66 @@ struct TackPinnedNoteWidgetView: View {
     let entry: TackPinnedNoteEntry
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 14)
-                .fill(entry.snapshot?.color.swiftUIColor ?? TackColor.yellow.swiftUIColor)
-                .shadow(color: .black.opacity(0.16), radius: 5, y: 3)
-
+        ZStack {
             if let imagePath = entry.snapshot?.imagePath,
                let image = NSImage(contentsOfFile: imagePath) {
                 Image(nsImage: image)
                     .resizable()
                     .scaledToFill()
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                    .overlay {
+                        (entry.snapshot?.color.swiftUIColor ?? TackColor.yellow.swiftUIColor)
+                            .opacity(0.12)
+                    }
             }
 
             if let snapshot = entry.snapshot {
-                Text(snapshot.text.isEmpty ? "New note" : snapshot.text)
-                    .font(snapshot.font)
-                    .fontWeight(snapshot.isBold == true ? .bold : .medium)
-                    .italic(snapshot.isItalic == true)
-                    .foregroundStyle(.black.opacity(0.84))
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(family == .systemSmall ? 9 : 14)
-                    .padding(family == .systemSmall ? 14 : 18)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                fittedNoteText(snapshot)
+                    .padding(14)
             } else {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(spacing: 6) {
                     Image(systemName: "pin.slash")
                         .font(.title2)
                     Text("Pin a note from Tack")
                         .font(.headline)
                 }
-                .foregroundStyle(.black.opacity(0.62))
-                .padding()
+                .foregroundStyle(.black)
             }
         }
         .containerBackground(for: .widget) {
-            Color.clear
+            (entry.snapshot?.color.swiftUIColor ?? TackColor.yellow.swiftUIColor)
         }
+    }
+
+    @ViewBuilder
+    private func fittedNoteText(_ snapshot: TackWidgetSnapshot) -> some View {
+        let baseSize = snapshot.baseFontSize(for: family)
+        if snapshot.fontSize != nil {
+            noteText(snapshot, size: baseSize)
+        } else {
+            ViewThatFits(in: .vertical) {
+                noteText(snapshot, size: baseSize)
+                noteText(snapshot, size: baseSize - 2)
+                noteText(snapshot, size: baseSize - 4)
+                noteText(snapshot, size: baseSize - 6)
+                noteText(snapshot, size: baseSize - 8)
+                noteText(snapshot, size: baseSize * 0.58)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func noteText(_ snapshot: TackWidgetSnapshot, size: CGFloat) -> some View {
+        Text(snapshot.text.isEmpty ? "New note" : snapshot.text)
+            .font(snapshot.font(size: size))
+            .fontWeight(snapshot.isBold == true ? .bold : .regular)
+            .italic(snapshot.isItalic == true)
+            .foregroundStyle(.black)
+            .multilineTextAlignment(.center)
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -86,6 +109,7 @@ struct TackPinnedNoteWidget: Widget {
         .configurationDisplayName("Pinned Note")
         .description("Keep one Tack note visible on your Mac desktop.")
         .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()
     }
 }
 
@@ -97,13 +121,21 @@ struct TackWidgets: WidgetBundle {
 }
 
 private extension TackWidgetSnapshot {
-    var font: Font {
-        let size = CGFloat(fontSize ?? 18)
+    func font(size: CGFloat) -> Font {
         guard let fontName, !fontName.isEmpty, fontName != "System" else {
-            return .system(size: size, design: .rounded)
+            return .system(size: size)
         }
         return .custom(fontName, size: size)
     }
+
+    func baseFontSize(for family: WidgetFamily) -> CGFloat {
+        if let fontSize, fontSize.isFinite, fontSize > 0 {
+            return CGFloat(fontSize)
+        }
+        let preferredSize: CGFloat = text.count <= 48 ? 24 : 18
+        return family == .systemMedium ? preferredSize + 2 : preferredSize
+    }
+
 }
 
 private extension TackColor {

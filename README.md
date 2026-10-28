@@ -96,9 +96,12 @@ Requirements: macOS 15 or later, Swift 6, and the Vision framework available on 
 
 ```bash
 swift test
+export TACK_SIGNING_IDENTITY='Apple Development: Your Name (YAU948K7T5)'
 ./scripts/build-app.sh
 open build/Tack.app
 ```
+
+`TACK_SIGNING_IDENTITY` must name a valid Apple Development or Developer ID certificate for Team `YAU948K7T5`; the build script rejects ad-hoc signatures and verifies that both the app and widget carry the matching Team ID and App Group entitlement.
 
 Boards created or imported through the app default to `~/Documents/Tack`. Tack does not delete, rewrite, or move the source `.postit` archive.
 

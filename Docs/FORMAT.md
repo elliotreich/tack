@@ -20,7 +20,7 @@ Unknown future keys are not currently re-emitted by the Swift decoder; this is a
 
 Digital note typography is stored on the note as optional `fontName`, `fontSize`, `isBold`, and `isItalic` fields so older packages continue to load with the default style. `Board.pinnedNoteID` identifies the note currently published to Tack's local desktop-widget snapshot; it is a convenience pointer, not a second copy of the note.
 
-The widget snapshot is stored outside the board package in the shared macOS App Group container `group.app.tack`. The package stores only the selected note ID, so deleting or moving a board does not create a second board copy. If the pinned note has an image, Tack copies only that image into the same shared container for the widget; the widget never needs direct access to the board package.
+The widget snapshot is stored outside the board package in the shared macOS App Group container `YAU948K7T5.app.tack`. This uses the macOS team-identifier app-group format, which macOS authorizes against the signing team without a provisioning profile. The package stores only the selected note ID, so deleting or moving a board does not create a second board copy. If the pinned note has an image, Tack copies only that image into the same shared container for the widget; the widget never needs direct access to the board package.
 
 The legacy `.postit` importer preserves:
 

@@ -12,7 +12,7 @@ This produces `dist/Tack-<version>-macOS.zip` and prints its SHA-256 checksum. T
 
 Set `TACK_SIGNING_IDENTITY` to a valid `Developer ID Application` identity and run the release script. The build signs the app and nested widget with hardened runtime, timestamping, and the checked-in entitlements. Submit the resulting archive with `xcrun notarytool`, wait for approval, staple the ticket with `xcrun stapler`, and recreate the ZIP after stapling.
 
-The `group.app.tack` App Group must be registered for the Apple Developer Team before distributing the widget. App Store distribution additionally requires the app sandbox and the corresponding security-scoped file-access design.
+The macOS app and widget share the team-scoped App Group `YAU948K7T5.app.tack`. The `TackWidgets` extension must carry the App Sandbox entitlement or macOS will reject it. App Store distribution additionally requires the app sandbox and the corresponding security-scoped file-access design.
 
 ## Public release gate
 

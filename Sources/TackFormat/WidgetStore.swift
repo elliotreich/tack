@@ -44,7 +44,7 @@ public struct TackWidgetSnapshot: Codable, Equatable, Sendable {
 }
 
 public enum TackWidgetStore {
-    public static let appGroupIdentifier = "group.app.tack"
+    public static let appGroupIdentifier = "YAU948K7T5.app.tack"
 
     public static var snapshotURL: URL {
         let root = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) ??
