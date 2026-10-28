@@ -24,6 +24,8 @@ swift build --package-path "$ROOT_DIR" -c release --product TackWidgets
 BIN_DIR="$(swift build --package-path "$ROOT_DIR" -c release --show-bin-path)"
 APP_DIR="$ROOT_DIR/build/Tack.app"
 WIDGET_APP="$APP_DIR/Contents/PlugIns/TackWidgets.appex"
+BUILD_TEMP_DIR="$(mktemp -d)"
+trap 'rm -rf "$BUILD_TEMP_DIR"' EXIT
 
 rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$APP_DIR/Contents/PlugIns/TackWidgets.appex/Contents/MacOS"
@@ -36,6 +38,59 @@ plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP_DIR/Contents
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP_DIR/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$VERSION" "$WIDGET_APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$WIDGET_APP/Contents/Info.plist"
+
+# SwiftPM compiles the AppIntents declarations, but it doesn't run Xcode's
+# App Intents metadata build phase. WidgetKit needs Metadata.appintents in the
+# extension bundle to display the note selector in Edit Widget.
+DEVELOPER_DIR_FOR_INTENTS="${DEVELOPER_DIR:-$(xcode-select -p)}"
+if [[ "$DEVELOPER_DIR_FOR_INTENTS" == *CommandLineTools* ]]; then
+    echo "App Intents metadata requires full Xcode; set DEVELOPER_DIR to Xcode.app/Contents/Developer." >&2
+    exit 1
+fi
+WIDGET_OBJECT_DIR="$(find "$ROOT_DIR/.build/out/Intermediates.noindex/Tack.build/Release/TackWidgets-p.build/Objects-normal" -mindepth 2 -maxdepth 2 -name 'TackWidgets-primary.swiftconstvalues' -print -quit)"
+if [[ -z "$WIDGET_OBJECT_DIR" ]]; then
+    echo "SwiftPM did not emit TackWidgets App Intents metadata inputs." >&2
+    exit 1
+fi
+WIDGET_OBJECT_DIR="$(dirname "$WIDGET_OBJECT_DIR")"
+CONST_VALUES_FILE="$WIDGET_OBJECT_DIR/TackWidgets-primary.swiftconstvalues"
+SOURCE_FILE_LIST="$WIDGET_OBJECT_DIR/TackWidgets.SwiftFileList"
+if [[ ! -s "$CONST_VALUES_FILE" || ! -s "$SOURCE_FILE_LIST" ]]; then
+    echo "TackWidgets App Intents metadata inputs are missing or empty." >&2
+    exit 1
+fi
+printf '%s\n' "$CONST_VALUES_FILE" > "$BUILD_TEMP_DIR/swift-const-values.list"
+SDK_ROOT="$(DEVELOPER_DIR="$DEVELOPER_DIR_FOR_INTENTS" xcrun --sdk macosx --show-sdk-path)"
+XCODE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :DTXcode' "$DEVELOPER_DIR_FOR_INTENTS/../Info.plist")"
+TARGET_ARCH="$(uname -m)"
+TARGET_TRIPLE="$TARGET_ARCH-apple-macosx15.0"
+DEVELOPER_DIR="$DEVELOPER_DIR_FOR_INTENTS" xcrun appintentsmetadataprocessor \
+    --output "$WIDGET_APP/Contents/Resources" \
+    --toolchain-dir "$DEVELOPER_DIR_FOR_INTENTS/Toolchains/XcodeDefault.xctoolchain" \
+    --module-name TackWidgets \
+    --sdk-root "$SDK_ROOT" \
+    --xcode-version "$XCODE_VERSION" \
+    --platform-family macOS \
+    --deployment-target 15.0 \
+    --target-triple "$TARGET_TRIPLE" \
+    --source-file-list "$SOURCE_FILE_LIST" \
+    --swift-const-vals-list "$BUILD_TEMP_DIR/swift-const-values.list"
+python3 - "$WIDGET_APP/Contents/Resources/Metadata.appintents/extract.actionsdata" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as metadata_file:
+    metadata = json.load(metadata_file)
+
+required_items = {
+    "actions": "SelectTackNoteIntent",
+    "entities": "TackPinnedNoteEntity",
+    "queries": "TackPinnedNoteEntityQuery",
+}
+for category, name in required_items.items():
+    if name not in metadata.get(category, {}):
+        raise SystemExit(f"TackWidgets App Intents metadata is missing {category[:-1]} {name}")
+PY
 
 codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp \
     --entitlements "$ROOT_DIR/Resources/TackWidgets.entitlements" "$WIDGET_APP"
@@ -51,8 +106,8 @@ if [[ "$TEAM_ID_WIDGET" != "YAU948K7T5" || "$TEAM_ID_HOST" != "YAU948K7T5" ]]; t
     exit 1
 fi
 
-ENTITLEMENTS_DIR="$(mktemp -d)"
-trap 'rm -rf "$ENTITLEMENTS_DIR"' EXIT
+ENTITLEMENTS_DIR="$BUILD_TEMP_DIR/entitlements"
+mkdir -p "$ENTITLEMENTS_DIR"
 codesign -d --entitlements :- "$APP_DIR" > "$ENTITLEMENTS_DIR/host.plist" 2>/dev/null
 codesign -d --entitlements :- "$WIDGET_APP" > "$ENTITLEMENTS_DIR/widget.plist" 2>/dev/null
 python3 - "$ENTITLEMENTS_DIR/host.plist" "$ENTITLEMENTS_DIR/widget.plist" <<'PY'

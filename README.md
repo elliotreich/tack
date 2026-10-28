@@ -63,9 +63,10 @@ Mac is the first platform. The direction includes keyboard controls, accessibili
 - Captured note images, OCR text, color, group, position, rotation, and provenance.
 - Search across note text and groups.
 - Filters for all notes, captured notes, text-only notes, and capture groups.
+- Saved-board library for `.tack` packages under `~/Documents/Tack`, with last-board restore and independent windows.
 - Markdown and CSV export.
 - Optional legacy `.postit` import that never modifies the source archive.
-- A `Pinned Note` macOS widget backed by a shared App Group snapshot.
+- Configurable `Pinned Note` macOS widgets backed by a shared App Group catalog, so different desktop widgets can display different notes from different boards.
 - `tackkit` commands for capture, validation, and compatibility conversion.
 - Human-readable `.tack` directory packages documented in [Docs/FORMAT.md](Docs/FORMAT.md).
 
@@ -103,9 +104,9 @@ open build/Tack.app
 
 `TACK_SIGNING_IDENTITY` must name a valid Apple Development or Developer ID certificate for Team `YAU948K7T5`; the build script rejects ad-hoc signatures and verifies that both the app and widget carry the matching Team ID and App Group entitlement.
 
-Boards created or imported through the app default to `~/Documents/Tack`. Tack does not delete, rewrite, or move the source `.postit` archive.
+Boards created or imported through the app default to `~/Documents/Tack`. The sidebar discovers saved boards there; each window has its own active board, New Window starts a separate session, and Tack restores the last opened board at the next launch. Opening a board already shown elsewhere focuses that window. Tack does not delete, rewrite, or move the source `.postit` archive.
 
-To use the desktop widget, select a note, choose `Pin to desktop widget`, and add Tack's `Pinned Note` widget from the macOS widget gallery. See [Docs/TESTING.md](Docs/TESTING.md) for the manual smoke path and [RELEASE.md](RELEASE.md) for signing and notarization.
+To use the desktop widget, select a note, choose `Pin to desktop widget`, and add Tack's `Pinned Note` widget from the macOS widget gallery. To assign a specific note to each widget, right-click that widget, choose `Edit Widget`, then select `Note`. Existing widgets without a selection continue showing the default pinned note. See [Docs/TESTING.md](Docs/TESTING.md) for the manual smoke path and [RELEASE.md](RELEASE.md) for signing and notarization.
 
 ### Post-it archive compatibility
 

@@ -51,6 +51,7 @@ The current Mac foundation includes:
 - Markdown and CSV export;
 - a human-readable `.tack` directory format;
 - a pinned-note desktop widget;
+- a local saved-board library with a separate active board per window;
 - `tackkit` capture, validation, and conversion commands.
 
 ## Deliberate next layers

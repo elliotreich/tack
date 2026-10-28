@@ -18,6 +18,7 @@ enum NoteFilter: Equatable {
 final class AppModel: ObservableObject {
     @Published var board: Board
     @Published var packageURL: URL?
+    @Published private(set) var libraryEntries: [TackBoardLibraryEntry] = []
     @Published var selectedNoteID: UUID?
     @Published var searchText = ""
     @Published var zoom: CGFloat = 1
@@ -28,9 +29,53 @@ final class AppModel: ObservableObject {
     @Published var viewportSize = CGSize(width: 900, height: 650)
     @Published var editingNoteID: UUID?
     private var autosaveTask: Task<Void, Never>?
+    private let libraryDirectory: URL
+    private var hasPendingChanges = false
+    weak var activeWindow: NSWindow?
 
-    init() {
+    init(initialBoardURL: URL? = nil) {
         board = Board()
+        libraryDirectory = TackBoardLibrary.defaultDirectory
+        try? FileManager.default.createDirectory(at: libraryDirectory, withIntermediateDirectories: true)
+        BoardWindowRegistry.shared.register(self)
+        refreshLibrary()
+
+        if let initialBoardURL {
+            do {
+                let loaded = try TackPackage.load(from: initialBoardURL)
+                board = loaded.board
+                packageURL = loaded.rootURL
+                rememberLastBoard(loaded.rootURL)
+                try? publishWidgetSnapshots()
+                statusMessage = "Reopened \(board.notes.count) notes"
+            } catch {
+                statusMessage = "Couldn't reopen the last board: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    static func lastOpenedBoardURL() -> URL? {
+        guard let path = UserDefaults.standard.string(forKey: "app.tack.lastBoardPath"),
+              FileManager.default.fileExists(atPath: path) else { return nil }
+        return URL(fileURLWithPath: path, isDirectory: true)
+    }
+
+    func refreshLibrary() {
+        do {
+            libraryEntries = try TackBoardLibrary.discover(in: libraryDirectory)
+        } catch {
+            statusMessage = "Couldn't read Tack boards: \(error.localizedDescription)"
+        }
+    }
+
+    func activateWindow() {
+        guard let activeWindow else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        activeWindow.makeKeyAndOrderFront(nil)
+    }
+
+    func displayError(_ error: Error) {
+        presentError(error)
     }
 
     var selectedNote: TackNote? {
@@ -74,14 +119,17 @@ final class AppModel: ObservableObject {
     }
 
     func newBoard() {
-        autosaveTask?.cancel()
-        autosaveTask = nil
-        board = Board()
-        packageURL = nil
+        do {
+            try flushPendingChanges()
+            var state = currentSessionState
+            try TackBoardSessionTransitions.startNew(&state, libraryDirectory: libraryDirectory)
+            apply(state)
+        } catch {
+            presentError(error)
+            return
+        }
         selectedNoteID = nil
         editingNoteID = nil
-        try? TackWidgetStore.clear()
-        WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
         zoom = 1
         pan = .zero
         noteFilter = .all
@@ -99,19 +147,24 @@ final class AppModel: ObservableObject {
         guard panel.runModal() == .OK, let sourceURL = panel.url else { return }
 
         do {
-            autosaveTask?.cancel()
-            autosaveTask = nil
-            let destination = try uniqueDestination(for: sourceURL.deletingPathExtension().lastPathComponent)
+            try flushPendingChanges()
+            let destination = try TackBoardLibrary.uniqueDestination(
+                for: sourceURL.deletingPathExtension().lastPathComponent,
+                in: libraryDirectory
+            )
             let result = try LegacyPostitImporter.importArchive(at: sourceURL, to: destination)
             board = result.board
             packageURL = result.destinationURL
+            hasPendingChanges = false
             selectedNoteID = board.notes.first?.id
             editingNoteID = nil
-            try? publishWidgetSnapshot()
+            rememberLastBoard(result.destinationURL)
+            try? publishWidgetSnapshots()
             zoom = 1
             pan = .zero
             noteFilter = .all
             statusMessage = "Imported \(result.sourceNoteCount) notes · \(result.copiedNoteImageCount) images"
+            refreshLibrary()
             if !result.warnings.isEmpty {
                 statusMessage += " · \(result.warnings.count) warning(s)"
             }
@@ -131,19 +184,33 @@ final class AppModel: ObservableObject {
         panel.allowedContentTypes = [UTType.data]
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
+        openBoard(at: url)
+    }
+
+    func openBoard(at url: URL) {
+        if packageURL?.standardizedFileURL == url.standardizedFileURL { return }
+        if let otherWindow = BoardWindowRegistry.shared.openModel(for: url, excluding: self) {
+            otherWindow.activateWindow()
+            statusMessage = "Focused the window already showing \(otherWindow.board.title)"
+            return
+        }
+
         do {
+            try flushPendingChanges()
+            var state = currentSessionState
+            try TackBoardSessionTransitions.open(url, state: &state, libraryDirectory: libraryDirectory)
+            apply(state)
             autosaveTask?.cancel()
             autosaveTask = nil
-            let loaded = try TackPackage.load(from: url)
-            board = loaded.board
-            packageURL = loaded.rootURL
             selectedNoteID = board.notes.first?.id
             editingNoteID = nil
-            try? publishWidgetSnapshot()
+            rememberLastBoard(url)
+            try? publishWidgetSnapshots()
             zoom = 1
             pan = .zero
             noteFilter = .all
             statusMessage = "Opened \(board.notes.count) notes"
+            refreshLibrary()
         } catch {
             presentError(error)
         }
@@ -152,20 +219,45 @@ final class AppModel: ObservableObject {
     func save() {
         autosaveTask?.cancel()
         autosaveTask = nil
+        hasPendingChanges = true
         writeBoard(status: "Saved · \(board.notes.count) notes")
     }
 
     private func writeBoard(status: String? = nil) {
         do {
-            let destination = try packageURL ?? uniqueDestination(for: board.title)
-            board.touch()
-            try TackPackage.save(board, to: destination)
-            packageURL = destination
-            try publishWidgetSnapshot()
+            try flushPendingChanges()
             if let status { statusMessage = status }
         } catch {
             presentError(error)
         }
+    }
+
+    func flushPendingChanges() throws {
+        autosaveTask?.cancel()
+        autosaveTask = nil
+        let savedChanges = hasPendingChanges
+        var state = currentSessionState
+        try TackBoardSessionTransitions.flush(&state, libraryDirectory: libraryDirectory)
+        apply(state)
+        if savedChanges, let packageURL {
+            rememberLastBoard(packageURL)
+            refreshLibrary()
+        }
+        try publishWidgetSnapshots()
+    }
+
+    private var currentSessionState: TackBoardSessionState {
+        TackBoardSessionState(board: board, packageURL: packageURL, hasPendingChanges: hasPendingChanges)
+    }
+
+    private func apply(_ state: TackBoardSessionState) {
+        board = state.board
+        packageURL = state.packageURL
+        hasPendingChanges = state.hasPendingChanges
+    }
+
+    private func rememberLastBoard(_ url: URL) {
+        UserDefaults.standard.set(url.standardizedFileURL.path, forKey: "app.tack.lastBoardPath")
     }
 
     func addNote() {
@@ -212,12 +304,15 @@ final class AppModel: ObservableObject {
         guard panel.runModal() == .OK, let sourceURL = panel.url else { return }
 
         do {
-            autosaveTask?.cancel()
-            autosaveTask = nil
-            let destination = try packageURL ?? uniqueDestination(for: board.title == "Untitled Board" ? sourceURL.deletingPathExtension().lastPathComponent : board.title)
+            try flushPendingChanges()
+            let destination = try packageURL ?? TackBoardLibrary.uniqueDestination(
+                for: board.title == "Untitled Board" ? sourceURL.deletingPathExtension().lastPathComponent : board.title,
+                in: libraryDirectory
+            )
             if packageURL == nil {
                 packageURL = destination
-                try TackPackage.save(board, to: destination)
+                hasPendingChanges = true
+                try flushPendingChanges()
             }
             let originX = board.notes.map { $0.frame.x + $0.frame.width }.max().map { $0 + 120 } ?? 80
             isCapturing = true
@@ -240,8 +335,9 @@ final class AppModel: ObservableObject {
                     board.canvas.width = max(board.canvas.width, result.canvasWidth)
                     board.canvas.height = max(board.canvas.height, result.canvasHeight)
                     if board.title == "Untitled Board" { board.title = groupName }
-                    board.touch()
-                    try TackPackage.save(board, to: destination)
+                    hasPendingChanges = true
+                    try flushPendingChanges()
+                    try publishWidgetSnapshots()
                     selectedNoteID = result.notes.first?.id
                     statusMessage = "Captured \(result.notes.count) note(s)\(result.usedFallback ? " · whole image kept as one note" : "")"
                 } catch {
@@ -280,20 +376,26 @@ final class AppModel: ObservableObject {
 
     func deleteSelected() {
         guard let selectedNoteID else { return }
-        board.notes.removeAll { $0.id == selectedNoteID }
-        for index in board.groups.indices {
-            board.groups[index].noteIDs.removeAll { $0 == selectedNoteID }
+        do {
+            let wasPinned = try TackWidgetStore.contains(boardID: board.id, noteID: selectedNoteID)
+            board.notes.removeAll { $0.id == selectedNoteID }
+            for index in board.groups.indices {
+                board.groups[index].noteIDs.removeAll { $0 == selectedNoteID }
+            }
+            if board.pinnedNoteID == selectedNoteID { board.pinnedNoteID = nil }
+            self.selectedNoteID = nil
+            editingNoteID = nil
+            hasPendingChanges = true
+            try flushPendingChanges()
+            if wasPinned {
+                try TackWidgetStore.remove(boardID: board.id, noteID: selectedNoteID)
+                WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
+            }
+            try publishWidgetSnapshots()
+            statusMessage = "Deleted note"
+        } catch {
+            presentError(error)
         }
-        if board.pinnedNoteID == selectedNoteID {
-            board.pinnedNoteID = nil
-            try? TackWidgetStore.clear()
-            WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
-        }
-        board.touch()
-        self.selectedNoteID = nil
-        editingNoteID = nil
-        statusMessage = "Deleted note"
-        scheduleAutosave()
     }
 
     func beginEditing(_ id: UUID) {
@@ -307,24 +409,45 @@ final class AppModel: ObservableObject {
 
     func togglePinnedNote() {
         guard let selectedNoteID, board.notes.contains(where: { $0.id == selectedNoteID }) else { return }
-        if board.pinnedNoteID == selectedNoteID {
-            board.pinnedNoteID = nil
-            do {
-                try TackWidgetStore.clear()
-                WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
-                board.touch()
-                writeBoard(status: "Unpinned note")
-            } catch {
-                presentError(error)
+        do {
+            let isCatalogued = try TackWidgetStore.contains(boardID: board.id, noteID: selectedNoteID)
+            let wasPinned = isCatalogued || board.pinnedNoteID == selectedNoteID
+            let previousMarker = board.pinnedNoteID
+            if wasPinned {
+                if board.pinnedNoteID == selectedNoteID { board.pinnedNoteID = nil }
+                hasPendingChanges = true
+                try flushPendingChanges()
+                do {
+                    try TackWidgetStore.remove(boardID: board.id, noteID: selectedNoteID)
+                    WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
+                    statusMessage = "Unpinned note"
+                } catch {
+                    board.pinnedNoteID = previousMarker
+                    hasPendingChanges = true
+                    try? flushPendingChanges()
+                    throw error
+                }
+            } else {
+                board.pinnedNoteID = selectedNoteID
+                hasPendingChanges = true
+                try flushPendingChanges()
+                do {
+                    try publishWidgetSnapshots()
+                    statusMessage = "Pinned note to desktop widget"
+                } catch {
+                    board.pinnedNoteID = previousMarker
+                    hasPendingChanges = true
+                    try? flushPendingChanges()
+                    throw error
+                }
             }
-        } else {
-            board.pinnedNoteID = selectedNoteID
-            writeBoard(status: "Pinned note to desktop widget")
+        } catch {
+            presentError(error)
         }
     }
 
     func isPinned(_ id: UUID) -> Bool {
-        board.pinnedNoteID == id
+        (try? TackWidgetStore.contains(boardID: board.id, noteID: id)) ?? (board.pinnedNoteID == id)
     }
 
     func updateNote(_ id: UUID, _ update: (inout TackNote) -> Void) {
@@ -386,21 +509,6 @@ final class AppModel: ObservableObject {
         return packageURL.appendingPathComponent(imagePath)
     }
 
-    private func uniqueDestination(for title: String) throws -> URL {
-        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let tackFolder = documents.appendingPathComponent("Tack", isDirectory: true)
-        try FileManager.default.createDirectory(at: tackFolder, withIntermediateDirectories: true)
-
-        let safeTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Untitled Board" : title
-        var candidate = tackFolder.appendingPathComponent("\(safeTitle).tack", isDirectory: true)
-        var number = 2
-        while FileManager.default.fileExists(atPath: candidate.path) {
-            candidate = tackFolder.appendingPathComponent("\(safeTitle) \(number).tack", isDirectory: true)
-            number += 1
-        }
-        return candidate
-    }
-
     private func presentError(_ error: Error) {
         statusMessage = "Error: \(error.localizedDescription)"
         let alert = NSAlert(error: error)
@@ -426,6 +534,7 @@ final class AppModel: ObservableObject {
     }
 
     private func scheduleAutosave() {
+        hasPendingChanges = true
         autosaveTask?.cancel()
         autosaveTask = Task { [weak self] in
             do {
@@ -438,39 +547,45 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func publishWidgetSnapshot() throws {
-        guard let pinnedNoteID = board.pinnedNoteID,
-              let note = board.notes.first(where: { $0.id == pinnedNoteID }) else {
-            try TackWidgetStore.clear()
+    private func publishWidgetSnapshots() throws {
+        var pinnedIDs = Set(try TackWidgetStore.allSnapshots()
+            .filter { $0.boardID == board.id }
+            .map(\.noteID))
+        if let legacyPinnedID = board.pinnedNoteID { pinnedIDs.insert(legacyPinnedID) }
+
+        for noteID in pinnedIDs {
+            guard let note = board.notes.first(where: { $0.id == noteID }) else {
+                try TackWidgetStore.remove(boardID: board.id, noteID: noteID)
+                continue
+            }
+
+            let widgetImagePath: String?
+            if let sourceURL = imageURL(for: note), FileManager.default.fileExists(atPath: sourceURL.path) {
+                let destinationURL = TackWidgetStore.imageURL(boardID: board.id, noteID: note.id, fileExtension: sourceURL.pathExtension)
+                try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try Data(contentsOf: sourceURL).write(to: destinationURL, options: .atomic)
+                widgetImagePath = destinationURL.path
+            } else {
+                widgetImagePath = nil
+            }
+
+            try TackWidgetStore.upsert(TackWidgetSnapshot(
+                boardID: board.id,
+                boardTitle: board.title,
+                noteID: note.id,
+                text: note.text,
+                color: note.color,
+                imagePath: widgetImagePath,
+                fontName: note.fontName,
+                fontSize: note.fontSize,
+                isBold: note.isBold,
+                isItalic: note.isItalic,
+                updatedAt: Date()
+            ))
+        }
+
+        if !pinnedIDs.isEmpty {
             WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
-            return
         }
-
-        try TackWidgetStore.clear()
-        let widgetImagePath: String?
-        if let sourceURL = imageURL(for: note), FileManager.default.fileExists(atPath: sourceURL.path) {
-            let destinationURL = TackWidgetStore.imageURL(for: note.id, fileExtension: sourceURL.pathExtension)
-            try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try FileManager.default.copyItem(at: sourceURL, to: destinationURL)
-            widgetImagePath = destinationURL.path
-        } else {
-            widgetImagePath = nil
-        }
-
-        let snapshot = TackWidgetSnapshot(
-            boardID: board.id,
-            boardTitle: board.title,
-            noteID: note.id,
-            text: note.text,
-            color: note.color,
-            imagePath: widgetImagePath,
-            fontName: note.fontName,
-            fontSize: note.fontSize,
-            isBold: note.isBold,
-            isItalic: note.isItalic,
-            updatedAt: Date()
-        )
-        try TackWidgetStore.save(snapshot)
-        WidgetCenter.shared.reloadTimelines(ofKind: TackWidgetSnapshot.widgetKind)
     }
 }

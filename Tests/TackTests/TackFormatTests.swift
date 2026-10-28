@@ -191,6 +191,77 @@ final class TackFormatTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
     }
 
+    func testWidgetCatalogUpdatesAndRemovesOnlySelectedBoardNote() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tack-widget-catalog-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let catalogURL = directory.appendingPathComponent("widget-catalog.json")
+        let legacyURL = directory.appendingPathComponent("widget-snapshot.json")
+        let boardA = UUID()
+        let boardB = UUID()
+        let sharedNoteID = UUID()
+        let first = TackWidgetSnapshot(boardID: boardA, boardTitle: "Board A", noteID: sharedNoteID, text: "A", color: .pink)
+        let second = TackWidgetSnapshot(boardID: boardB, boardTitle: "Board B", noteID: sharedNoteID, text: "B", color: .yellow)
+
+        try TackWidgetStore.upsert(first, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        try TackWidgetStore.upsert(second, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        XCTAssertEqual(try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL).count, 2)
+
+        let updatedFirst = TackWidgetSnapshot(boardID: boardA, boardTitle: "Board A", noteID: sharedNoteID, text: "A updated", color: .pink)
+        try TackWidgetStore.upsert(updatedFirst, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        XCTAssertEqual(try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL).count, 2)
+        XCTAssertEqual(try TackWidgetStore.snapshot(boardID: boardA, noteID: sharedNoteID, catalogURL: catalogURL, legacySnapshotURL: legacyURL)?.text, "A updated")
+
+        try TackWidgetStore.remove(boardID: boardA, noteID: sharedNoteID, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        let remaining = try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        XCTAssertEqual(remaining.map(\.boardID), [boardB])
+        XCTAssertEqual(remaining.first?.text, "B")
+    }
+
+    func testWidgetCatalogReadsLegacySnapshotAndMigratesOnFirstUpsert() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("tack-widget-legacy-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let catalogURL = directory.appendingPathComponent("widget-catalog.json")
+        let legacyURL = directory.appendingPathComponent("widget-snapshot.json")
+        let legacy = TackWidgetSnapshot(
+            boardID: UUID(),
+            boardTitle: "Legacy",
+            noteID: UUID(),
+            text: "Existing",
+            color: .blue,
+            updatedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+        try TackWidgetStore.save(legacy, to: legacyURL)
+
+        XCTAssertEqual(try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL), [legacy])
+        let added = TackWidgetSnapshot(boardID: UUID(), boardTitle: "New", noteID: UUID(), text: "New", color: .green)
+        try TackWidgetStore.upsert(added, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        let migrated = try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        XCTAssertEqual(Set(migrated.map(\.noteID)), Set([legacy.noteID, added.noteID]))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: catalogURL.path))
+
+        try TackWidgetStore.remove(boardID: added.boardID, noteID: added.noteID, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        try TackWidgetStore.remove(boardID: legacy.boardID, noteID: legacy.noteID, catalogURL: catalogURL, legacySnapshotURL: legacyURL)
+        XCTAssertTrue(try TackWidgetStore.allSnapshots(catalogURL: catalogURL, legacySnapshotURL: legacyURL).isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: legacyURL.path))
+    }
+
+    func testWidgetImagePathsAreUniqueAcrossBoards() {
+        let boardA = UUID()
+        let boardB = UUID()
+        let noteID = UUID()
+        XCTAssertNotEqual(
+            TackWidgetStore.imageURL(boardID: boardA, noteID: noteID),
+            TackWidgetStore.imageURL(boardID: boardB, noteID: noteID)
+        )
+    }
+
+    func testWidgetIdentityRoundTripsAndRejectsMalformedIDs() {
+        let identity = TackWidgetIdentity(boardID: UUID(), noteID: UUID())
+        XCTAssertEqual(TackWidgetIdentity(id: identity.id), identity)
+        XCTAssertNil(TackWidgetIdentity(id: "not-a-widget-id"))
+        XCTAssertNil(TackWidgetIdentity(id: "\(identity.boardID.uuidString).\(identity.noteID.uuidString).extra"))
+    }
+
     private func makeLegacyArchive() throws -> URL {
         let fixtureDirectory = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

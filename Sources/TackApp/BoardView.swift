@@ -143,6 +143,59 @@ private struct BoardSidebar: View {
                 .padding(.horizontal, 8)
                 .padding(.bottom, 8)
 
+            HStack {
+                Text("SAVED BOARDS")
+                    .font(TackUI.sectionLabel)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button { model.refreshLibrary() } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.caption2)
+                }
+                .buttonStyle(.plain)
+                .help("Refresh saved boards")
+            }
+            .padding(.horizontal, 8)
+            .padding(.bottom, 5)
+
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 3) {
+                    if model.libraryEntries.isEmpty {
+                        Text("Saved boards appear here")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                    }
+                    ForEach(model.libraryEntries) { entry in
+                        Button { model.openBoard(at: entry.url) } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(entry.title)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                                Text("\(entry.noteCount) \(entry.noteCount == 1 ? "note" : "notes")")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background {
+                                RoundedRectangle(cornerRadius: 7)
+                                    .fill(model.packageURL?.standardizedFileURL == entry.url.standardizedFileURL ? TackUI.accent.opacity(0.16) : .clear)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Open \(entry.title), \(entry.noteCount) notes")
+                    }
+                }
+            }
+            .frame(maxHeight: 210)
+            .padding(.bottom, 9)
+
+            Divider()
+                .padding(.bottom, 9)
+
             VStack(alignment: .leading, spacing: 3) {
                 filterButton("All notes", systemImage: "square.grid.2x2", filter: .all)
                 filterButton("Captured", systemImage: "photo.on.rectangle", filter: .captured)
