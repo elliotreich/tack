@@ -6,6 +6,16 @@ It adds the half that the old capture workflow does not provide: create a new no
 
 Tack is an independent project and is not affiliated with 3M.
 
+## Download
+
+Get the latest **Tack-…-macOS.zip** from [Releases](https://github.com/elliotreich/tack/releases). It needs macOS 15 or later on an Apple silicon Mac.
+
+1. Unzip it and drag **Tack.app** into **Applications**.
+2. Open Tack. macOS says it can't verify the app: click **Done**.
+3. Go to **System Settings → Privacy & Security**, scroll down, and click **Open Anyway** next to the Tack message.
+
+You only do this once. The warning appears because the build is signed but not yet notarized by Apple. To change Tack or build it yourself, see [Build and run](#build-and-run).
+
 ## What Tack is replacing
 
 Tack is designed around a specific replacement workflow:
@@ -93,7 +103,7 @@ Thousands of notes will eventually require spatial indexing, viewport culling, t
 
 ## Build and run
 
-There is no prebuilt download yet, so for now you build Tack yourself.
+To build your own copy, for example in a fork:
 
 Requirements: macOS 15 or later, full Xcode 16 or later (the command-line tools alone are not enough), and a free Apple ID signed in to Xcode.
 

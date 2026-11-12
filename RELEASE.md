@@ -14,6 +14,17 @@ Set `TACK_SIGNING_IDENTITY` to a valid `Developer ID Application` identity and r
 
 The macOS app and widget share the team-scoped App Group `<TeamID>.app.tack`. The build script reads the Team ID from the signing certificate (or `TACK_TEAM_ID`), resolves `$(TeamIdentifierPrefix)` in the checked-in entitlements, and writes the group into both Info.plists as `TackAppGroupIdentifier`. Official builds use Team `YAU948K7T5`. The `TackWidgets` extension must carry the App Sandbox entitlement or macOS will reject it. App Store distribution additionally requires the app sandbox and the corresponding security-scoped file-access design.
 
+## Unnotarized GitHub release (no paid Apple account)
+
+Until there is a Developer ID, releases are signed with an Apple Development identity and published as a GitHub pre-release. Gatekeeper blocks them on first launch, and users approve them once in System Settings → Privacy & Security → Open Anyway. The App Group and widget work because the signature still carries the team ID. The signature is timestamped, so a released build keeps working after the certificate expires.
+
+```sh
+export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+export TACK_SIGNING_IDENTITY='Apple Development: you@example.com (ABCDE12345)'
+./scripts/build-release.sh
+gh release create v<version> dist/Tack-<version>-macOS.zip --prerelease
+```
+
 ## Public release gate
 
 - `swift test --enable-code-coverage` passes.
