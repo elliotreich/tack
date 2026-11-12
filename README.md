@@ -93,16 +93,28 @@ Thousands of notes will eventually require spatial indexing, viewport culling, t
 
 ## Build and run
 
-Requirements: macOS 15 or later, Swift 6, and the Vision framework available on the Mac.
+There is no prebuilt download yet, so for now you build Tack yourself.
 
-```bash
-swift test
-export TACK_SIGNING_IDENTITY='Apple Development: Your Name (YAU948K7T5)'
-./scripts/build-app.sh
-open build/Tack.app
-```
+Requirements: macOS 15 or later, full Xcode 16 or later (the command-line tools alone are not enough), and a free Apple ID signed in to Xcode.
 
-`TACK_SIGNING_IDENTITY` must name a valid Apple Development or Developer ID certificate for Team `YAU948K7T5`; the build script rejects ad-hoc signatures and verifies that both the app and widget carry the matching Team ID and App Group entitlement.
+1. In Xcode, open **Settings → Accounts**, add your Apple ID, and choose **Manage Certificates → + → Apple Development**. A free account is enough.
+2. Find the name of that certificate:
+
+   ```bash
+   security find-identity -v -p codesigning
+   ```
+
+3. Build and open the app, using the name in quotes from step 2:
+
+   ```bash
+   export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+   swift test
+   export TACK_SIGNING_IDENTITY='Apple Development: you@example.com (ABCDE12345)'
+   ./scripts/build-app.sh
+   open build/Tack.app
+   ```
+
+The build needs a real signature, not an ad-hoc one, because the app and its desktop widget share notes through an App Group that macOS ties to your Apple team. The script reads your Team ID from the certificate, names the App Group `<TeamID>.app.tack`, and checks that both the app and the widget are signed for it. If it cannot read the Team ID, set `TACK_TEAM_ID` to the 10-character ID shown in your Apple account.
 
 Boards created or imported through the app default to `~/Documents/Tack`. The sidebar discovers saved boards there; each window has its own active board, New Window starts a separate session, and Tack restores the last opened board at the next launch. Opening a board already shown elsewhere focuses that window. Tack does not delete, rewrite, or move the source `.postit` archive.
 
@@ -110,7 +122,7 @@ To use the desktop widget, select a note, choose `Pin to desktop widget`, and ad
 
 ### Post-it archive compatibility
 
-Tack imports a `.postit` export as one editable board. It preserves the first sheet's note text, colors, groups, positions, sizes, rotations, note images, and available source capture photos and dates. Source capture files are retained by default; `tackkit convert` can omit them with `--omit-captures`. Tack is focused on personal editable boards: it does not yet recreate the Post-it app's capture workflow, collaboration, or full history. Its desktop widget currently shows one pinned note for the app.
+Tack imports a `.postit` export as one editable board. It preserves the first sheet's note text, colors, groups, positions, sizes, rotations, note images, and available source capture photos and dates. Source capture files are retained by default; `tackkit convert` can omit them with `--omit-captures`. Tack is focused on personal editable boards. Importing does not bring over the Post-it app's collaboration sessions or full edit history; Tack's own capture flow is described above.
 
 ## CLI
 
@@ -129,6 +141,7 @@ swift run tackkit convert legacy.postit Board.tack --omit-captures
 - [RELEASE.md](RELEASE.md) — local archives, Developer ID signing, App Groups, and notarization.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution and data-safety rules.
 - [CHANGELOG.md](CHANGELOG.md) — version history.
+- [Docs/SPEC.md](Docs/SPEC.md) — the long-range design plan (most of it is not built yet).
 
 ## License and compatibility
 

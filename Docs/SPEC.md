@@ -1,5 +1,7 @@
 # Tack — Technical & Product Specification v1.0
 
+> **This is the long-range design plan, not a description of the current app.** Many items here (iPhone/iPad/visionOS apps, collaboration, sync, most exporters) are not built yet. For what Tack does today, see the [README](../README.md#what-works-today).
+
 **An open-source, Apple-native successor to the Post-it® App**
 Working codename: **Tack** (`app.tack.*`)
 Platforms: macOS 15+, iOS 18+, iPadOS 18+, visionOS 2+ (stretch)

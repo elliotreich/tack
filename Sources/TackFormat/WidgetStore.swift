@@ -66,7 +66,16 @@ public struct TackWidgetIdentity: Codable, Equatable, Hashable, Sendable, Identi
 }
 
 public enum TackWidgetStore {
-    public static let appGroupIdentifier = "YAU948K7T5.app.tack"
+    /// The shared App Group, written into both Info.plists at build time as
+    /// `<TeamID>.app.tack`. The fallback keeps `swift run` and unpackaged
+    /// builds working; it only matters when no bundle supplies a value.
+    public static let appGroupIdentifier: String = {
+        if let value = Bundle.main.object(forInfoDictionaryKey: "TackAppGroupIdentifier") as? String,
+           !value.isEmpty, !value.contains("$(") {
+            return value
+        }
+        return "YAU948K7T5.app.tack"
+    }()
 
     private struct Catalog: Codable {
         var snapshots: [TackWidgetSnapshot]

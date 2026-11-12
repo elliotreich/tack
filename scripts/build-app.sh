@@ -12,13 +12,35 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 if [[ -z "$SIGNING_IDENTITY" || "$SIGNING_IDENTITY" == "-" ]]; then
-    echo "Tack's team-scoped App Group requires a non-ad-hoc signature from Team YAU948K7T5." >&2
-    echo "Set TACK_SIGNING_IDENTITY to a valid Apple Development or Developer ID identity for that team." >&2
+    echo "Tack's desktop widget shares data through a team-scoped App Group, which needs a real (non-ad-hoc) signature." >&2
+    echo "Set TACK_SIGNING_IDENTITY to an Apple Development or Developer ID identity from your own Apple account." >&2
+    echo "List yours with: security find-identity -v -p codesigning" >&2
     exit 1
 fi
 
-python3 "$ROOT_DIR/scripts/generate-app-icon.py" "$ROOT_DIR/Resources/AppIcon-1024.png"
-"$ROOT_DIR/scripts/build-icon.sh" >/dev/null
+# The App Group is "<TeamID>.app.tack". Use TACK_TEAM_ID if set, otherwise read
+# the team (the certificate's OU) from the signing identity.
+TEAM_ID="${TACK_TEAM_ID:-}"
+if [[ -z "$TEAM_ID" ]]; then
+    TEAM_ID="$(security find-certificate -c "$SIGNING_IDENTITY" -p 2>/dev/null \
+        | openssl x509 -noout -subject -nameopt multiline 2>/dev/null \
+        | sed -n 's/^ *organizationalUnitName *= *//p' | head -n 1 || true)"
+fi
+if [[ ! "$TEAM_ID" =~ ^[A-Z0-9]{10}$ ]]; then
+    echo "Could not determine the Apple Team ID for '$SIGNING_IDENTITY'. Set TACK_TEAM_ID to your 10-character Team ID." >&2
+    exit 1
+fi
+APP_GROUP="$TEAM_ID.app.tack"
+
+# Regenerating the icon needs Pillow; the generated icons are checked in, so
+# builders without it use those.
+if python3 -c 'import PIL' 2>/dev/null; then
+    python3 "$ROOT_DIR/scripts/generate-app-icon.py" "$ROOT_DIR/Resources/AppIcon-1024.png"
+    "$ROOT_DIR/scripts/build-icon.sh" >/dev/null
+elif [[ ! -f "$ROOT_DIR/Resources/AppIcon.icns" ]]; then
+    echo "Resources/AppIcon.icns is missing and Pillow is not installed to regenerate it (pip3 install Pillow)." >&2
+    exit 1
+fi
 swift build --package-path "$ROOT_DIR" -c release --product Tack
 swift build --package-path "$ROOT_DIR" -c release --product TackWidgets
 BIN_DIR="$(swift build --package-path "$ROOT_DIR" -c release --show-bin-path)"
@@ -38,6 +60,16 @@ plutil -replace CFBundleShortVersionString -string "$VERSION" "$APP_DIR/Contents
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP_DIR/Contents/Info.plist"
 plutil -replace CFBundleShortVersionString -string "$VERSION" "$WIDGET_APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$WIDGET_APP/Contents/Info.plist"
+plutil -replace TackAppGroupIdentifier -string "$APP_GROUP" "$APP_DIR/Contents/Info.plist"
+plutil -replace TackAppGroupIdentifier -string "$APP_GROUP" "$WIDGET_APP/Contents/Info.plist"
+
+# Resolve $(TeamIdentifierPrefix) in the checked-in entitlements, as Xcode would.
+ENTITLEMENTS_SRC_DIR="$BUILD_TEMP_DIR/entitlements-src"
+mkdir -p "$ENTITLEMENTS_SRC_DIR"
+for name in Tack TackWidgets; do
+    sed "s/\$(TeamIdentifierPrefix)/$TEAM_ID./g" "$ROOT_DIR/Resources/$name.entitlements" > "$ENTITLEMENTS_SRC_DIR/$name.entitlements"
+    plutil -lint -s "$ENTITLEMENTS_SRC_DIR/$name.entitlements"
+done
 
 # SwiftPM compiles the AppIntents declarations, but it doesn't run Xcode's
 # App Intents metadata build phase. WidgetKit needs Metadata.appintents in the
@@ -93,16 +125,16 @@ for category, name in required_items.items():
 PY
 
 codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp \
-    --entitlements "$ROOT_DIR/Resources/TackWidgets.entitlements" "$WIDGET_APP"
+    --entitlements "$ENTITLEMENTS_SRC_DIR/TackWidgets.entitlements" "$WIDGET_APP"
 codesign --force --sign "$SIGNING_IDENTITY" --options runtime --timestamp \
-    --entitlements "$ROOT_DIR/Resources/Tack.entitlements" "$APP_DIR"
+    --entitlements "$ENTITLEMENTS_SRC_DIR/Tack.entitlements" "$APP_DIR"
 
 codesign --verify --deep --strict "$APP_DIR"
 TEAM_ID_WIDGET="$(codesign -dv --verbose=4 "$WIDGET_APP" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1)"
 TEAM_ID_HOST="$(codesign -dv --verbose=4 "$APP_DIR" 2>&1 | sed -n 's/^TeamIdentifier=//p' | head -n 1)"
-if [[ "$TEAM_ID_WIDGET" != "YAU948K7T5" || "$TEAM_ID_HOST" != "YAU948K7T5" ]]; then
-    echo "Tack and TackWidgets must both be signed by Team YAU948K7T5 (actual IDs: host='${TEAM_ID_HOST:-missing}', widget='${TEAM_ID_WIDGET:-missing}')." >&2
-    echo "Set TACK_SIGNING_IDENTITY to an Apple Development or Developer ID identity for Team YAU948K7T5." >&2
+if [[ "$TEAM_ID_WIDGET" != "$TEAM_ID" || "$TEAM_ID_HOST" != "$TEAM_ID" ]]; then
+    echo "Tack and TackWidgets must both be signed by Team $TEAM_ID (actual IDs: host='${TEAM_ID_HOST:-missing}', widget='${TEAM_ID_WIDGET:-missing}')." >&2
+    echo "Check that TACK_SIGNING_IDENTITY and TACK_TEAM_ID refer to the same team." >&2
     exit 1
 fi
 
@@ -110,11 +142,11 @@ ENTITLEMENTS_DIR="$BUILD_TEMP_DIR/entitlements"
 mkdir -p "$ENTITLEMENTS_DIR"
 codesign -d --entitlements :- "$APP_DIR" > "$ENTITLEMENTS_DIR/host.plist" 2>/dev/null
 codesign -d --entitlements :- "$WIDGET_APP" > "$ENTITLEMENTS_DIR/widget.plist" 2>/dev/null
-python3 - "$ENTITLEMENTS_DIR/host.plist" "$ENTITLEMENTS_DIR/widget.plist" <<'PY'
+python3 - "$ENTITLEMENTS_DIR/host.plist" "$ENTITLEMENTS_DIR/widget.plist" "$APP_GROUP" <<'PY'
 import plistlib
 import sys
 
-expected_group = "YAU948K7T5.app.tack"
+expected_group = sys.argv[3]
 with open(sys.argv[1], "rb") as host_file, open(sys.argv[2], "rb") as widget_file:
     entitlements = [plistlib.load(host_file), plistlib.load(widget_file)]
 
