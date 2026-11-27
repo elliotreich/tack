@@ -1,4 +1,5 @@
 import Foundation
+import TackAgent
 import TackCapture
 import TackCore
 import TackFormat
@@ -60,6 +61,25 @@ struct TackKit {
             try TackPackage.save(board, to: output)
             print("notes=\(result.notes.count)")
             print("output=\(output.path)")
+        case "mcp":
+            let service = try agentService(arguments)
+            let version = (try? String(contentsOf: URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent().appendingPathComponent("VERSION"), encoding: .utf8))?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? "0.1.0"
+            TackMCPServer(service: service, version: version).run()
+        case "list":
+            let service = try agentService(arguments)
+            print(try TackMCPTools.call("list_boards", arguments: [:], service: service).text)
+        case "show":
+            guard arguments.count >= 2, !arguments[1].hasPrefix("--") else { throw CLIError.usage("show requires a board id, title or path") }
+            let service = try agentService(arguments)
+            let format: JSONValue = arguments.contains("--json") ? "json" : "outline"
+            print(try TackMCPTools.call("get_board", arguments: ["board": .string(arguments[1]), "format": format], service: service).text)
+        case "search":
+            guard arguments.count >= 2 else { throw CLIError.usage("search requires a query") }
+            let service = try agentService(arguments)
+            var args: [String: JSONValue] = ["query": .string(arguments[1])]
+            if let board = option("--in", arguments) { args["board"] = .string(board) }
+            print(try TackMCPTools.call("search_notes", arguments: .object(args), service: service).text)
         case "help", "--help", "-h":
             printUsage()
         default:
@@ -75,7 +95,30 @@ struct TackKit {
           tackkit validate board.tack
           tackkit convert legacy.postit board.tack [--omit-captures]
           tackkit capture wall.jpg board.tack
+          tackkit list [--root DIR]
+          tackkit show <board id|title|path> [--json] [--root DIR]
+          tackkit search <query> [--in <board>] [--root DIR]
+          tackkit mcp [--root DIR] [--board PATH ...] [--read-only]
+
+        mcp runs a Model Context Protocol server on stdin/stdout so agents
+        (Claude Code, Codex, ...) can read and edit boards. --root defaults to
+        ~/Documents/Tack (or $TACK_ROOT); --board allows one extra package.
         """)
+    }
+
+    private static func option(_ name: String, _ arguments: [String]) -> String? {
+        guard let index = arguments.firstIndex(of: name), index + 1 < arguments.count else { return nil }
+        return arguments[index + 1]
+    }
+
+    private static func agentService(_ arguments: [String]) throws -> TackBoardService {
+        let rootPath = option("--root", arguments) ?? ProcessInfo.processInfo.environment["TACK_ROOT"]
+        let root = rootPath.map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true) } ?? TackBoardLibrary.defaultDirectory
+        var extras: [URL] = []
+        for (index, argument) in arguments.enumerated() where argument == "--board" && index + 1 < arguments.count {
+            extras.append(URL(fileURLWithPath: (arguments[index + 1] as NSString).expandingTildeInPath, isDirectory: true))
+        }
+        return TackBoardService(root: root, extraBoards: extras, readOnly: arguments.contains("--read-only"))
     }
 }
 

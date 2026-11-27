@@ -9,6 +9,17 @@ public struct TackBoardLibraryEntry: Identifiable, Sendable {
 
     public var id: String { url.standardizedFileURL.path }
 
+    /// The package's file name without `.tack`, e.g. "Untitled Board 7".
+    public var fileName: String { url.deletingPathExtension().lastPathComponent }
+
+    /// Second line for a list row: note count, plus the file name when it differs
+    /// from the title, so boards that share a title (several "Untitled Board"s)
+    /// can be told apart.
+    public var subtitle: String {
+        let count = "\(noteCount) \(noteCount == 1 ? "note" : "notes")"
+        return fileName == title ? count : "\(count) · \(fileName)"
+    }
+
     public init(url: URL, title: String, noteCount: Int, modifiedAt: Date) {
         self.url = url
         self.title = title
@@ -76,11 +87,15 @@ public struct TackBoardSessionState: Sendable {
     public var board: Board
     public var packageURL: URL?
     public var hasPendingChanges: Bool
+    /// The board as last read from or written to disk. Saves merge in any
+    /// changes another writer made since then instead of overwriting them.
+    public var diskBoard: Board?
 
-    public init(board: Board = Board(), packageURL: URL? = nil, hasPendingChanges: Bool = false) {
+    public init(board: Board = Board(), packageURL: URL? = nil, hasPendingChanges: Bool = false, diskBoard: Board? = nil) {
         self.board = board
         self.packageURL = packageURL
         self.hasPendingChanges = hasPendingChanges
+        self.diskBoard = diskBoard
     }
 }
 
@@ -91,9 +106,10 @@ public enum TackBoardSessionTransitions {
         var savedBoard = state.board
         savedBoard.touch()
         let destination = try state.packageURL ?? TackBoardLibrary.uniqueDestination(for: savedBoard.title, in: libraryDirectory)
-        try TackPackage.save(savedBoard, to: destination)
+        savedBoard = try TackPackage.saveMerging(savedBoard, base: state.packageURL == nil ? nil : state.diskBoard, to: destination)
 
         state.board = savedBoard
+        state.diskBoard = savedBoard
         state.packageURL = destination
         state.hasPendingChanges = false
     }
@@ -110,6 +126,7 @@ public enum TackBoardSessionTransitions {
         next.board = loaded.board
         next.packageURL = loaded.rootURL
         next.hasPendingChanges = false
+        next.diskBoard = loaded.board
         state = next
     }
 
@@ -119,6 +136,7 @@ public enum TackBoardSessionTransitions {
         next.board = Board()
         next.packageURL = nil
         next.hasPendingChanges = false
+        next.diskBoard = nil
         state = next
     }
 }

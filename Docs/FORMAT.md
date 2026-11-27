@@ -12,6 +12,10 @@ Board.tack/
 └── ops/
 ```
 
+`ops/agent-journal.jsonl` (optional) holds one JSON object per line for each change made through `tackkit mcp`: `id`, `at`, `tool`, `summary`, `before`/`after` note arrays and optional `beforeGroups`/`afterGroups`, and `undone`. Readers that do not understand it can ignore it.
+
+Several processes may write the same package. Writers hold an advisory `flock` on `/tmp/app.tack.locks/<fnv1a-64 of the resolved path>.lock` while they read, modify and atomically replace `board.json`, and the app three-way merges its unsaved edits with whatever is on disk (see [AGENTS.md](AGENTS.md)).
+
 `board.json` is authoritative for the materialized board. JSON is pretty-printed with stable sorted keys and ISO-8601 dates. Note coordinates are unbounded world coordinates; the app does not treat `canvas.width` and `canvas.height` as a hard edge. They remain layout/export hints for v0.1 and preserve compatibility with captured boards.
 
 Unknown future keys are not currently re-emitted by the Swift decoder; this is an explicit v0.1 limitation to remove before publishing the format as a compatibility contract.
@@ -33,5 +37,7 @@ The legacy `.postit` importer preserves:
 - cluster/group names and membership;
 - OCR confidence where present;
 - original capture photos when present (unless `tackkit convert --omit-captures` is used).
+
+Note text comes from, in order: typed text over the note (`noteEditInfo.text.contents`), the user's correction of the transcription (`userProvidedText`), then the legacy text fields, then raw OCR.
 
 No source archive is modified. Imported packages are newly created under the user's Tack folder.

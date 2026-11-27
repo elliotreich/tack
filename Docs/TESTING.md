@@ -20,4 +20,12 @@ For a local smoke test after the automated suite passes:
 7. Import or capture a board, confirm OCR/images/groups appear, export Markdown and CSV, and open the exported files in another app.
 8. Run `tackkit validate` on a copied `.tack` package and confirm it reports `missing_images=0`. Temporarily remove a referenced image from the copy and confirm validation fails clearly.
 
+9. With a board open in the app, run `tackkit mcp` (or `tackkit` via an agent) against it and create a note. Confirm the window shows it within a second without a reload, and that typing in another note at the same moment keeps both changes.
+
+On a Mac with only the Command Line Tools (no Xcode), the app, widget and XCTest suite cannot build. Build `tackkit` and run the swift-testing suite with:
+
+```bash
+TACK_CLT_ONLY=1 swift test -Xswiftc -plugin-path -Xswiftc /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing
+```
+
 These checks are intentionally separate from the automated tests because widget placement, accessibility, visual editing, and App Group behavior require a real macOS session.

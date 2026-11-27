@@ -29,6 +29,33 @@
             "text": "World fixture",
             "confidence": 0.94
           }
+        },
+        {
+          "isDigitalNote": true,
+          "noteUUID": "33333333-3333-4333-8333-333333333333",
+          "centerX": 60,
+          "centerY": 160,
+          "width": 80,
+          "height": 80,
+          "noteEditInfo": {
+            "text": {
+              "contents": "Typed over a blank note",
+              "typeface": "kalam"
+            }
+          }
+        },
+        {
+          "isDigitalNote": false,
+          "noteUUID": "44444444-4444-4444-8444-444444444444",
+          "centerX": 160,
+          "centerY": 220,
+          "width": 80,
+          "height": 80,
+          "userProvidedText": "Delete apps on phone",
+          "ocr": {
+            "text": "Delete GPPS on phone",
+            "confidence": 0.4
+          }
         }
       ]
     }
