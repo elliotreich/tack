@@ -9,6 +9,17 @@ public struct TackBoardLibraryEntry: Identifiable, Sendable {
 
     public var id: String { url.standardizedFileURL.path }
 
+    /// The package's file name without `.tack`, e.g. "Untitled Board 7".
+    public var fileName: String { url.deletingPathExtension().lastPathComponent }
+
+    /// Second line for a list row: note count, plus the file name when it differs
+    /// from the title, so boards that share a title (several "Untitled Board"s)
+    /// can be told apart.
+    public var subtitle: String {
+        let count = "\(noteCount) \(noteCount == 1 ? "note" : "notes")"
+        return fileName == title ? count : "\(count) · \(fileName)"
+    }
+
     public init(url: URL, title: String, noteCount: Int, modifiedAt: Date) {
         self.url = url
         self.title = title

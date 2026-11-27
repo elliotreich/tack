@@ -144,7 +144,7 @@ private struct BoardSidebar: View {
                 .padding(.bottom, 8)
 
             HStack {
-                Text("SAVED BOARDS")
+                Text("SAVED BOARDS · \(model.libraryEntries.count)")
                     .font(TackUI.sectionLabel)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -173,7 +173,7 @@ private struct BoardSidebar: View {
                                 Text(entry.title)
                                     .font(.caption)
                                     .lineLimit(1)
-                                Text("\(entry.noteCount) \(entry.noteCount == 1 ? "note" : "notes")")
+                                Text(entry.subtitle)
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -190,7 +190,10 @@ private struct BoardSidebar: View {
                     }
                 }
             }
-            .frame(maxHeight: 210)
+            // Every board in the Tack folder is listed; keep the scrollbar visible
+            // so boards past the first few rows are discoverable.
+            .scrollIndicators(.visible)
+            .frame(maxHeight: 320)
             .padding(.bottom, 9)
 
             Divider()

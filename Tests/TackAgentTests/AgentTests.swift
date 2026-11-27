@@ -279,3 +279,20 @@ struct ImporterTextTests {
         #expect(result.board.notes.map(\.text) == ["Hello fixture", "World fixture", "Typed over a blank note", "Delete apps on phone"])
     }
 }
+
+@Suite("Board library")
+struct LibraryTests {
+    @Test func listsEveryBoardAndDisambiguatesSharedTitles() throws {
+        let root = try tempRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for index in 0..<12 {
+            let url = try TackBoardLibrary.uniqueDestination(for: "Untitled Board", in: root)
+            try TackPackage.save(Board(title: "Untitled Board", notes: Array(repeating: (), count: index % 3).map { note("n") }), to: url)
+        }
+        let entries = try TackBoardLibrary.discover(in: root)
+        #expect(entries.count == 12)
+        #expect(Set(entries.map(\.subtitle)).count == 12)
+        #expect(entries.contains { $0.subtitle == "0 notes" })          // "Untitled Board.tack": name matches title
+        #expect(entries.contains { $0.subtitle.hasSuffix("· Untitled Board 7") })
+    }
+}
