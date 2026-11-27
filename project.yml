@@ -59,6 +59,8 @@ targets:
         product: TackCapture
       - package: TackPackage
         product: TackInterop
+      - package: TackPackage
+        product: TackAgent
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.tack.tackkit

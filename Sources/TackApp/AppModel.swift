@@ -17,7 +17,11 @@ enum NoteFilter: Equatable {
 @MainActor
 final class AppModel: ObservableObject {
     @Published var board: Board
-    @Published var packageURL: URL?
+    @Published var packageURL: URL? {
+        didSet {
+            if oldValue?.standardizedFileURL != packageURL?.standardizedFileURL { watchPackage() }
+        }
+    }
     @Published private(set) var libraryEntries: [TackBoardLibraryEntry] = []
     @Published var selectedNoteID: UUID?
     @Published var searchText = ""
@@ -31,6 +35,10 @@ final class AppModel: ObservableObject {
     private var autosaveTask: Task<Void, Never>?
     private let libraryDirectory: URL
     private var hasPendingChanges = false
+    /// The board as last read from or written to disk; the base for merging
+    /// edits made by agents (`tackkit mcp`), other windows or sync.
+    private var diskBoard: Board?
+    private var packageWatcher: TackPackageWatcher?
     weak var activeWindow: NSWindow?
 
     init(initialBoardURL: URL? = nil) {
@@ -44,6 +52,7 @@ final class AppModel: ObservableObject {
             do {
                 let loaded = try TackPackage.load(from: initialBoardURL)
                 board = loaded.board
+                diskBoard = loaded.board
                 packageURL = loaded.rootURL
                 rememberLastBoard(loaded.rootURL)
                 try? publishWidgetSnapshots()
@@ -52,6 +61,8 @@ final class AppModel: ObservableObject {
                 statusMessage = "Couldn't reopen the last board: \(error.localizedDescription)"
             }
         }
+        // Property observers do not run during init, so start watching here.
+        watchPackage()
     }
 
     static func lastOpenedBoardURL() -> URL? {
@@ -153,7 +164,8 @@ final class AppModel: ObservableObject {
                 in: libraryDirectory
             )
             let result = try LegacyPostitImporter.importArchive(at: sourceURL, to: destination)
-            board = result.board
+            board = (try? TackPackage.load(from: result.destinationURL).board) ?? result.board
+            diskBoard = board
             packageURL = result.destinationURL
             hasPendingChanges = false
             selectedNoteID = board.notes.first?.id
@@ -247,13 +259,40 @@ final class AppModel: ObservableObject {
     }
 
     private var currentSessionState: TackBoardSessionState {
-        TackBoardSessionState(board: board, packageURL: packageURL, hasPendingChanges: hasPendingChanges)
+        TackBoardSessionState(board: board, packageURL: packageURL, hasPendingChanges: hasPendingChanges, diskBoard: diskBoard)
     }
 
     private func apply(_ state: TackBoardSessionState) {
         board = state.board
+        diskBoard = state.diskBoard
         packageURL = state.packageURL
         hasPendingChanges = state.hasPendingChanges
+    }
+
+    private func watchPackage() {
+        packageWatcher?.cancel()
+        packageWatcher = nil
+        guard let packageURL else { return }
+        packageWatcher = TackPackageWatcher(packageURL: packageURL) { [weak self] in
+            MainActor.assumeIsolated { self?.reloadFromDisk() }
+        }
+    }
+
+    /// Picks up a change another process (an agent via `tackkit mcp`, the CLI,
+    /// iCloud) wrote to this board's `board.json`. Unsaved edits in this window
+    /// are merged with it rather than overwritten, and vice versa.
+    func reloadFromDisk() {
+        guard let packageURL,
+              let disk = try? TackPackage.readBoardIfPresent(at: packageURL),
+              disk != diskBoard else { return }
+        let base = diskBoard ?? disk
+        board = hasPendingChanges ? TackBoardMerge.merge(base: base, local: board, remote: disk) : disk
+        diskBoard = disk
+        if let selectedNoteID, !board.notes.contains(where: { $0.id == selectedNoteID }) { self.selectedNoteID = nil }
+        if let editingNoteID, !board.notes.contains(where: { $0.id == editingNoteID }) { self.editingNoteID = nil }
+        try? publishWidgetSnapshots()
+        refreshLibrary()
+        statusMessage = "Updated from disk · \(board.notes.count) notes"
     }
 
     private func rememberLastBoard(_ url: URL) {

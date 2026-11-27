@@ -46,14 +46,14 @@ final class TackFormatTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: root) }
 
         let result = try LegacyPostitImporter.importArchive(at: archive, to: root)
-        XCTAssertEqual(result.sourceNoteCount, 2)
+        XCTAssertEqual(result.sourceNoteCount, 4)
         XCTAssertEqual(result.board.groups.count, 1)
         XCTAssertEqual(result.copiedNoteImageCount, 0)
         XCTAssertEqual(result.board.title, "Fixture Board")
-        XCTAssertEqual(result.board.notes.map(\.text), ["Hello fixture", "World fixture"])
+        XCTAssertEqual(result.board.notes.map(\.text), ["Hello fixture", "World fixture", "Typed over a blank note", "Delete apps on phone"])
 
         let loaded = try TackPackage.load(from: root)
-        XCTAssertEqual(loaded.board.notes.count, 2)
+        XCTAssertEqual(loaded.board.notes.count, 4)
     }
 
     func testLegacyImportPreservesSourceCaptureByDefault() throws {

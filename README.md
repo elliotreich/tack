@@ -90,7 +90,7 @@ Tack is an alpha foundation, not yet a complete replacement for every part of Fr
 - Frames, connectors, shapes, canvas-level text, and ink.
 - Better capture review, missed-note correction, perspective cleanup, and multi-shot wall stitching.
 - PDF, PNG/SVG, and broader open-whiteboard export.
-- Quick Look previews, App Intents, Shortcuts actions, and Spotlight indexing.
+- Quick Look previews, App Intents, Shortcuts actions, and Spotlight indexing (agents can already use the MCP server).
 - iPhone/iPad versions, optional iCloud sync, and peer collaboration.
 
 The current acceptance test is deliberately smaller: a user can open a blank board, add digital notes, capture physical notes into the same board, edit both kinds, pin one to the desktop, and export the result without an account or migration project.
@@ -141,12 +141,21 @@ swift run tackkit capture wall.jpg Board.tack
 swift run tackkit validate Board.tack
 swift run tackkit convert legacy.postit Board.tack
 swift run tackkit convert legacy.postit Board.tack --omit-captures
+swift run tackkit list
+swift run tackkit show "My Board"
+swift run tackkit search "groceries"
+swift run tackkit mcp            # MCP server for AI agents
 ```
+
+## Agents and MCP
+
+`tackkit mcp` lets Claude Code, Codex or any MCP client list, read, search, create, edit, move, group, delete and capture notes on your boards, with every change journaled and undoable. The app picks up agent edits live and merges them with your own. Setup and the safety model are in [Docs/AGENTS.md](Docs/AGENTS.md).
 
 ## Repository guide
 
 - [Docs/PRODUCT.md](Docs/PRODUCT.md) — product position, replacement scope, goals, and boundaries.
 - [Docs/FORMAT.md](Docs/FORMAT.md) — `.tack` package structure and compatibility rules.
+- [Docs/AGENTS.md](Docs/AGENTS.md) — MCP server, agent tools, and how concurrent edits are merged.
 - [Docs/TESTING.md](Docs/TESTING.md) — automated checks and hands-on Mac test path.
 - [RELEASE.md](RELEASE.md) — local archives, Developer ID signing, App Groups, and notarization.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution and data-safety rules.

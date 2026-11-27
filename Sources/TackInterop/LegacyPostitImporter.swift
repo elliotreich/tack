@@ -96,7 +96,7 @@ public enum LegacyPostitImporter {
                 let centerY = legacyNote.centerY ?? 0
                 let noteFrame = TackRect(x: groupOriginX + centerX - width / 2, y: groupOriginY + centerY - height / 2, width: width, height: height)
                 let color = legacyNote.backgroundColor.map { TackColor(red: clamp($0.red ?? 1), green: clamp($0.green ?? 0.93), blue: clamp($0.blue ?? 0.32), alpha: clamp($0.alpha ?? 1)) } ?? .yellow
-                let text = legacyNote.ocr?.text ?? legacyNote.text ?? legacyNote.userText ?? ""
+                let text = preferredText(for: legacyNote)
                 let sourceCaptureID = nonEmpty(legacyNote.board)
                 if let sourceCaptureID { captures.insert(sourceCaptureID) }
                 if let contentUUID = nonEmpty(legacyNote.contentUUID) { contentUUIDByNoteID[noteID] = contentUUID }
@@ -273,6 +273,19 @@ public enum LegacyPostitImporter {
         return candidate
     }
 
+    /// Picks the note's text the way the Post-it app shows it. Typed text over a
+    /// note (`noteEditInfo.text.contents`) and the user's own correction of the
+    /// transcription (`userProvidedText`) beat the raw OCR guess, which for a
+    /// typed-over blank note is empty and for a corrected note is wrong.
+    static func preferredText(for note: LegacyNote) -> String {
+        nonEmpty(note.noteEditInfo?.text?.contents)
+            ?? nonEmpty(note.userProvidedText)
+            ?? nonEmpty(note.userText)
+            ?? nonEmpty(note.text)
+            ?? note.ocr?.text
+            ?? ""
+    }
+
     private static func nonEmpty(_ value: String?) -> String? {
         guard let value else { return nil }
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -345,7 +358,7 @@ private struct LegacyCluster: Decodable {
     }
 }
 
-private struct LegacyNote: Decodable {
+struct LegacyNote: Decodable {
     let isDigitalNote: Bool?
     let noteUUID: String?
     let contentUUID: String?
@@ -359,6 +372,8 @@ private struct LegacyNote: Decodable {
     let ocr: LegacyOCR?
     let text: String?
     let userText: String?
+    let userProvidedText: String?
+    let noteEditInfo: LegacyNoteEditInfo?
 
     enum CodingKeys: String, CodingKey {
         case isDigitalNote
@@ -374,17 +389,27 @@ private struct LegacyNote: Decodable {
         case ocr
         case text
         case userText
+        case userProvidedText
+        case noteEditInfo
     }
 }
 
-private struct LegacyColor: Decodable {
+struct LegacyNoteEditInfo: Decodable {
+    let text: LegacyNoteEditText?
+}
+
+struct LegacyNoteEditText: Decodable {
+    let contents: String?
+}
+
+struct LegacyColor: Decodable {
     let red: Double?
     let green: Double?
     let blue: Double?
     let alpha: Double?
 }
 
-private struct LegacyOCR: Decodable {
+struct LegacyOCR: Decodable {
     let text: String?
     let confidence: Double?
 }
